@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════
 
 const API_BASE = 'https://west.albion-online-data.com/api/v2/stats/prices';
-const CITIES = ['Caerleon', 'Bridgewatch', 'Martlock', 'Fort Sterling', 'Lymhurst', 'Thetford'];
+const CITIES = ['Caerleon', 'Bridgewatch', 'Martlock', 'Fort Sterling', 'Lymhurst', 'Thetford', 'Black Market', 'Brecilien'];
 const BATCH_SIZE = 80;       // Max items per API call (API limit is ~100)
 const BATCH_DELAY = 350;     // ms between batches to respect rate limits
 const CACHE_TTL = 5 * 60 * 1000; // 5 minute cache
