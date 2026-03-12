@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Albion Market Flipper</title>
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --bg-card: #1c2028;
+      --border: #30363d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent: #d4a843;
+      --accent-dim: #b8922e;
+      --green: #3fb950;
+      --green-dim: #238636;
+      --red: #f85149;
+      --blue: #58a6ff;
+      --orange: #d29922;
+      --profit-glow: rgba(63, 185, 80, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* ─── HEADER ─── */
+    .header {
+      background: linear-gradient(135deg, #1a1e2e 0%, #0d1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
+
+    .header .subtitle {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    /* ─── MAIN LAYOUT ─── */
+    .app {
+      display: flex;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      width: 320px;
+      min-width: 320px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      max-height: calc(100vh - 60px);
+    }
+
+    .panel {
+      margin-bottom: 20px;
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* ─── FORM CONTROLS ─── */
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    select, input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+      margin-bottom: 12px;
+      transition: border-color 0.15s;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .row > * { flex: 1; }
+
+    /* ─── CATEGORY CHECKBOXES ─── */
+    .category-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 250px;
+      overflow-y: auto;
+      padding: 8px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+
+    .category-grid label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 4px;
+      margin-bottom: 0;
+      font-size: 12.5px;
+      transition: background 0.1s;
+    }
+
+    .category-grid label:hover {
+      background: rgba(212, 168, 67, 0.08);
+    }
+
+    .category-grid input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+    }
+
+    .cat-select-controls {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .cat-select-controls button {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .cat-select-controls button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+      color: #000;
+    }
+
+    .btn-primary:hover { filter: brightness(1.1); }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      border-color: var(--border);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover { border-color: var(--accent); }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+      width: auto;
+    }
+
+    /* ─── MULTI-ROUTE TOGGLE ─── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background: var(--text-secondary);
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    .toggle input:checked + .toggle-slider {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+    }
+
+    .toggle input:checked + .toggle-slider::before {
+      transform: translateX(16px);
+      background: var(--accent);
+    }
+
+    /* ─── CUSTOM ITEMS ─── */
+    .custom-items-input {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: monospace;
+      resize: vertical;
+      min-height: 60px;
+      margin-bottom: 12px;
+    }
+
+    .custom-items-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* ─── MAIN CONTENT ─── */
+    .content {
+      flex: 1;
+      padding: 20px 24px;
+      overflow-y: auto;
+      max-height: calc(100vh - 60px);
+    }
+
+    /* ─── STATUS BAR ─── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .status-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .status-text strong {
+      color: var(--accent);
+    }
+
+    .progress-container {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      width: 200px;
+    }
+
+    .progress-container.active { display: flex; }
+
+    .progress-bar {
+      height: 4px;
+      background: var(--bg-tertiary);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .progress-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    /* ─── SORT BAR ─── */
+    .sort-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .sort-bar span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .sort-chip {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .sort-chip:hover { border-color: var(--accent); color: var(--text-primary); }
+
+    .sort-chip.active {
+      border-color: var(--accent);
+      background: rgba(212, 168, 67, 0.12);
+      color: var(--accent);
+    }
+
+    /* ─── RESULTS TABLE ─── */
+    .results-table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-tertiary);
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    thead th:hover { color: var(--accent); }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+
+    tbody tr:hover { background: rgba(212, 168, 67, 0.04); }
+
+    tbody tr.high-profit { background: var(--profit-glow); }
+
+    tbody td {
+      padding: 10px 14px;
+      white-space: nowrap;
+    }
+
+    .item-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .city-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .city-Caerleon { background: rgba(248, 81, 73, 0.15); color: #f85149; }
+    .city-Bridgewatch { background: rgba(210, 153, 34, 0.15); color: #d29922; }
+    .city-Martlock { background: rgba(88, 166, 255, 0.15); color: #58a6ff; }
+    .city-FortSterling { background: rgba(230, 237, 243, 0.12); color: #c9d1d9; }
+    .city-Lymhurst { background: rgba(63, 185, 80, 0.15); color: #3fb950; }
+    .city-Thetford { background: rgba(188, 128, 240, 0.15); color: #bc80f0; }
+
+    .price { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
+
+    .profit-positive { color: var(--green); font-weight: 700; }
+    .profit-negative { color: var(--red); }
+
+    .margin-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .margin-high { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+    .margin-medium { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+    .margin-low { background: rgba(139, 148, 158, 0.1); color: var(--text-secondary); }
+
+    .fav-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.4;
+      transition: opacity 0.15s;
+    }
+
+    .fav-btn:hover, .fav-btn.active { opacity: 1; }
+
+    /* ─── EMPTY / LOADING STATES ─── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+
+    .empty-state h3 {
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p { font-size: 13px; }
+
+    /* ─── LAST UPDATED ─── */
+    .data-age {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .data-age .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      display: inline-block;
+    }
+
+    .data-age .dot.stale { background: var(--orange); }
+    .data-age .dot.old { background: var(--red); }
+
+    /* ─── TAX INFO ─── */
+    .tax-info {
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 6px 10px;
+      background: rgba(212, 168, 67, 0.06);
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    /* ─── MULTI-ROUTE RESULT HEADER ─── */
+    .route-header {
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .route-arrow {
+      color: var(--accent);
+      font-size: 16px;
+    }
+
+    .route-city {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .route-count {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .sidebar {
+        width: 100%;
+        min-width: 100%;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .content { max-height: none; }
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+  </style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<div class="header">
+  <h1>Albion Market Flipper</h1>
+  <span class="subtitle">Transport Arbitrage Scanner</span>
+</div>
+
+<!-- ─── APP LAYOUT ─── -->
+<div class="app">
+
+  <!-- ─── SIDEBAR ─── -->
+  <div class="sidebar">
+
+    <!-- Route Selection -->
+    <div class="panel">
+      <div class="panel-title">Route</div>
+
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="multiRouteToggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <label for="multiRouteToggle" style="margin-bottom:0; cursor:pointer;">Scan all routes</label>
+      </div>
+
+      <div id="singleRouteControls">
+        <label for="originCity">Buy in (Origin)</label>
+        <select id="originCity">
+          <option value="Caerleon">Caerleon</option>
+          <option value="Bridgewatch">Bridgewatch</option>
+          <option value="Martlock">Martlock</option>
+          <option value="Fort Sterling">Fort Sterling</option>
+          <option value="Lymhurst" selected>Lymhurst</option>
+          <option value="Thetford">Thetford</option>
+        </select>
+
+        <label for="destCity">Sell in (Destination)</label>
+        <select id="destCity">
+          <option value="Caerleon" selected>Caerleon</option>
+          <option value="Bridgewatch">Bridgewatch</option>
+          <option value="Martlock">Martlock</option>
+          <option value="Fort Sterling">Fort Sterling</option>
+          <option value="Lymhurst">Lymhurst</option>
+          <option value="Thetford">Thetford</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="panel">
+      <div class="panel-title">Item Categories</div>
+      <div class="cat-select-controls">
+        <button onclick="selectAllCategories()">Select All</button>
+        <button onclick="deselectAllCategories()">Deselect All</button>
+      </div>
+      <div class="category-grid" id="categoryGrid"></div>
+    </div>
+
+    <!-- Custom Items -->
+    <div class="panel">
+      <div class="panel-title">Custom Items (optional)</div>
+      <textarea class="custom-items-input" id="customItems"
+        placeholder="Enter item IDs, one per line:&#10;T6_PLANKS&#10;T7_METALBAR&#10;T5_BAG@2"></textarea>
+    </div>
+
+    <!-- Filters -->
+    <div class="panel">
+      <div class="panel-title">Filters</div>
+      <div class="row">
+        <div>
+          <label for="minProfit">Min Profit</label>
+          <input type="number" id="minProfit" value="500" min="0" step="100">
+        </div>
+        <div>
+          <label for="minMargin">Min Margin %</label>
+          <input type="number" id="minMargin" value="3" min="0" step="0.5">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="tierFilter">Tier</label>
+          <select id="tierFilter">
+            <option value="all">All Tiers</option>
+            <option value="2">T2</option>
+            <option value="3">T3</option>
+            <option value="4">T4</option>
+            <option value="5">T5</option>
+            <option value="6">T6</option>
+            <option value="7">T7</option>
+            <option value="8">T8</option>
+          </select>
+        </div>
+        <div>
+          <label for="enchantFilter">Enchantment</label>
+          <select id="enchantFilter">
+            <option value="all">All</option>
+            <option value="0">.0 (None)</option>
+            <option value="1">.1</option>
+            <option value="2">.2</option>
+            <option value="3">.3</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tax-info">
+        Market tax: <strong>4%</strong> setup + <strong>4%</strong> sales = 8% total (applied to sell price)
+      </div>
+
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="applyTax" checked>
+          <span class="toggle-slider"></span>
+        </label>
+        <label for="applyTax" style="margin-bottom:0; cursor:pointer;">Apply market tax (8%)</label>
+      </div>
+
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="showFavoritesOnly">
+          <span class="toggle-slider"></span>
+        </label>
+        <label for="showFavoritesOnly" style="margin-bottom:0; cursor:pointer;">Show favorites only</label>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="panel">
+      <button class="btn btn-primary" id="scanBtn" onclick="startScan()">
+        Scan Market
+      </button>
+      <div style="height: 8px;"></div>
+      <button class="btn btn-secondary" id="refreshBtn" onclick="refreshData()" style="display:none;">
+        Refresh Prices
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ─── MAIN CONTENT ─── -->
+  <div class="content" id="mainContent">
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-text" id="statusText">
+        Select categories and click <strong>Scan Market</strong> to begin.
+      </div>
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">0%</div>
+      </div>
+      <div class="data-age" id="dataAge" style="display:none;">
+        <span class="dot" id="ageDot"></span>
+        <span id="ageText">Updated just now</span>
+      </div>
+    </div>
+
+    <!-- Sort Bar (hidden until results) -->
+    <div class="sort-bar" id="sortBar" style="display:none;">
+      <span>Sort by:</span>
+      <button class="sort-chip active" data-sort="profit" onclick="setSort('profit')">Highest Profit</button>
+      <button class="sort-chip" data-sort="margin" onclick="setSort('margin')">Highest Margin</button>
+      <button class="sort-chip" data-sort="buyPrice" onclick="setSort('buyPrice')">Lowest Buy</button>
+      <button class="sort-chip" data-sort="sellPrice" onclick="setSort('sellPrice')">Highest Sell</button>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsContainer">
+      <div class="empty-state">
+        <div class="icon">&#x1F4B0;</div>
+        <h3>Ready to Find Flips</h3>
+        <p>Choose your origin and destination cities, select item categories, then scan the market.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Item database -->
+<script src="items.js"></script>
+
+<!-- Main application logic -->
+<script src="app.js"></script>
+
+</body>
+</html>
