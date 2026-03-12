@@ -428,9 +428,40 @@
       white-space: nowrap;
     }
 
+    .item-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .item-icon {
+      width: 32px;
+      height: 32px;
+      image-rendering: pixelated;
+      flex-shrink: 0;
+    }
+
     .item-name {
       font-weight: 600;
       color: var(--text-primary);
+    }
+
+    .consume-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 3px 8px;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .consume-btn:hover {
+      border-color: var(--green);
+      color: var(--green);
+      background: rgba(63, 185, 80, 0.1);
     }
 
     .city-tag {
@@ -634,13 +665,6 @@
         <button onclick="deselectAllCategories()">Deselect All</button>
       </div>
       <div class="category-grid" id="categoryGrid"></div>
-    </div>
-
-    <!-- Custom Items -->
-    <div class="panel">
-      <div class="panel-title">Custom Items (optional)</div>
-      <textarea class="custom-items-input" id="customItems"
-        placeholder="Enter item IDs, one per line:&#10;T6_PLANKS&#10;T7_METALBAR&#10;T5_BAG@2"></textarea>
     </div>
 
     <!-- Filters -->

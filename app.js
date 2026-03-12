@@ -13,6 +13,7 @@ let priceCache = {};         // { itemId_city_quality: { data, timestamp } }
 let currentResults = [];     // Current filtered+sorted results
 let currentSort = 'profit';
 let favorites = loadFavorites();
+let consumed = new Set();     // Flips consumed this session
 let scanning = false;
 let lastScanTime = null;
 
@@ -232,15 +233,8 @@ async function startScan() {
 
   let itemIds = getItemsByCategories(selectedCategories);
 
-  // Add custom items
-  const customText = document.getElementById('customItems').value.trim();
-  if (customText) {
-    const customIds = customText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-    itemIds = [...new Set([...itemIds, ...customIds])];
-  }
-
   if (itemIds.length === 0) {
-    setStatus('No items selected. Check at least one category or add custom items.');
+    setStatus('No items selected. Check at least one category.');
     return;
   }
 
@@ -347,6 +341,8 @@ function applyFiltersAndRender() {
     if (tierFilter !== 'all' && flip.tier !== parseInt(tierFilter)) return false;
     if (enchantFilter !== 'all' && flip.enchantment !== parseInt(enchantFilter)) return false;
     if (showFavsOnly && !favorites.has(flip.itemId)) return false;
+    const consumeKey = `${flip.itemId}__${flip.quality}__${flip.originCity}__${flip.destCity}`;
+    if (consumed.has(consumeKey)) return false;
     return true;
   });
 
@@ -468,6 +464,7 @@ function buildTable(flips, showRoute) {
           <th>Profit</th>
           <th>Margin</th>
           <th>Data Age</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -488,7 +485,7 @@ function buildTable(flips, showRoute) {
             ${isFav ? '&#9733;' : '&#9734;'}
           </button>
         </td>
-        <td class="item-name">${flip.itemName}</td>
+        <td><div class="item-cell"><img class="item-icon" src="${getItemIconUrl(flip.itemId)}" alt="" loading="lazy"><span class="item-name">${flip.itemName}</span></div></td>
         <td style="color:var(--text-secondary); font-size:12px;">${qualityNames[flip.quality] || flip.quality}</td>
         ${showRoute ? `
           <td><span class="city-tag city-${flip.originCity.replace(/\s/g, '')}">${flip.originCity}</span></td>
@@ -500,6 +497,7 @@ function buildTable(flips, showRoute) {
         <td class="price profit-positive">+${formatSilver(flip.profit)}</td>
         <td><span class="margin-badge ${marginClass}">${flip.margin.toFixed(1)}%</span></td>
         <td class="data-age"><span class="dot ${oldestAge}"></span> ${buyAge}</td>
+        <td><button class="consume-btn" onclick="consumeFlip('${flip.itemId}', ${flip.quality}, '${flip.originCity}', '${flip.destCity}')">Done</button></td>
       </tr>
     `;
   }
@@ -523,6 +521,16 @@ function loadFavorites() {
 
 function saveFavorites() {
   localStorage.setItem('albion_flipper_favorites', JSON.stringify([...favorites]));
+}
+
+function consumeFlip(itemId, quality, origin, dest) {
+  const key = `${itemId}__${quality}__${origin}__${dest}`;
+  consumed.add(key);
+  applyFiltersAndRender();
+}
+
+function getItemIconUrl(itemId) {
+  return `https://render.albiononline.com/v1/item/${itemId}.png?size=64`;
 }
 
 function toggleFavorite(itemId, btn) {
