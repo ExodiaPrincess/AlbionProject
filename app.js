@@ -784,6 +784,14 @@ function getItemIconUrl(itemId) {
 const FARM_PLOTS = { 1: 1, 2: 3, 3: 6, 4: 9, 5: 12, 6: 16 };
 const SEEDS_PER_PLOT = 9;
 
+// NPC merchant seed/baby prices (fixed costs from farming merchant)
+const NPC_SEED_COST = { 1: 2312, 2: 3468, 3: 5780, 4: 8670, 5: 11560, 6: 17340, 7: 26010, 8: 34680 };
+const NPC_BABY_COST = { 3: 5780, 4: 8670, 5: 11560, 6: 17340, 7: 26010, 8: 34680 };
+
+// Animal feeding: 9 crops if favorite food, 18 if not
+const FEED_AMOUNT_FAVORITE = 9;
+const FEED_AMOUNT_NORMAL = 18;
+
 const FARM_CROPS = [
   { tier: 1, name: 'Carrot',  seedId: 'T1_FARM_CARROT_SEED',  productId: 'T1_CARROT' },
   { tier: 2, name: 'Bean',    seedId: 'T2_FARM_BEAN_SEED',    productId: 'T2_BEAN' },
@@ -796,12 +804,12 @@ const FARM_CROPS = [
 ];
 
 const FARM_ANIMALS = [
-  { tier: 3, name: 'Chicken', babyId: 'T3_FARM_CHICKEN_BABY', grownId: 'T3_FARM_CHICKEN_GROWN', productId: 'T3_EGG',  productName: 'Hen Egg',    growthHours: 22 },
-  { tier: 4, name: 'Goat',    babyId: 'T4_FARM_GOAT_BABY',    grownId: 'T4_FARM_GOAT_GROWN',    productId: 'T4_MILK', productName: 'Goat Milk',  growthHours: 44 },
-  { tier: 5, name: 'Goose',   babyId: 'T5_FARM_GOOSE_BABY',   grownId: 'T5_FARM_GOOSE_GROWN',   productId: 'T5_EGG',  productName: 'Goose Egg',  growthHours: 66 },
-  { tier: 6, name: 'Sheep',   babyId: 'T6_FARM_SHEEP_BABY',   grownId: 'T6_FARM_SHEEP_GROWN',   productId: 'T6_MILK', productName: 'Sheep Milk', growthHours: 88 },
-  { tier: 7, name: 'Pig',     babyId: 'T7_FARM_PIG_BABY',     grownId: 'T7_FARM_PIG_GROWN',     productId: null,      productName: null,         growthHours: 110 },
-  { tier: 8, name: 'Cow',     babyId: 'T8_FARM_COW_BABY',     grownId: 'T8_FARM_COW_GROWN',     productId: 'T8_MILK', productName: 'Cow Milk',   growthHours: 132 }
+  { tier: 3, name: 'Chicken', babyId: 'T3_FARM_CHICKEN_BABY', grownId: 'T3_FARM_CHICKEN_GROWN', productId: 'T3_EGG',  productName: 'Hen Egg',    growthHours: 22, favFood: 'Wheat',   favFoodId: 'T3_WHEAT' },
+  { tier: 4, name: 'Goat',    babyId: 'T4_FARM_GOAT_BABY',    grownId: 'T4_FARM_GOAT_GROWN',    productId: 'T4_MILK', productName: 'Goat Milk',  growthHours: 44, favFood: 'Turnip',  favFoodId: 'T4_TURNIP' },
+  { tier: 5, name: 'Goose',   babyId: 'T5_FARM_GOOSE_BABY',   grownId: 'T5_FARM_GOOSE_GROWN',   productId: 'T5_EGG',  productName: 'Goose Egg',  growthHours: 66, favFood: 'Cabbage', favFoodId: 'T5_CABBAGE' },
+  { tier: 6, name: 'Sheep',   babyId: 'T6_FARM_SHEEP_BABY',   grownId: 'T6_FARM_SHEEP_GROWN',   productId: 'T6_MILK', productName: 'Sheep Milk', growthHours: 88, favFood: 'Potato',  favFoodId: 'T6_POTATO' },
+  { tier: 7, name: 'Pig',     babyId: 'T7_FARM_PIG_BABY',     grownId: 'T7_FARM_PIG_GROWN',     productId: null,      productName: null,         growthHours: 110, favFood: 'Corn',   favFoodId: 'T7_CORN' },
+  { tier: 8, name: 'Cow',     babyId: 'T8_FARM_COW_BABY',     grownId: 'T8_FARM_COW_GROWN',     productId: 'T8_MILK', productName: 'Cow Milk',   growthHours: 132, favFood: 'Pumpkin', favFoodId: 'T8_PUMPKIN' }
 ];
 
 const FARM_HERBS = [
@@ -860,7 +868,7 @@ function onFarmProductChange() {
       const days = Math.floor(animal.growthHours / 24);
       const hours = animal.growthHours % 24;
       const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
-      info.innerHTML = `${SEEDS_PER_PLOT} babies per pasture &middot; ${timeStr} growth<br>${products}`;
+      info.innerHTML = `${SEEDS_PER_PLOT} babies per pasture &middot; ${timeStr} growth<br>${products}<br>Favorite food: ${animal.favFood} (${FEED_AMOUNT_FAVORITE}/animal, or ${FEED_AMOUNT_NORMAL} other crop)`;
     }
   } else if (farmType === 'herbs') {
     const herb = FARM_HERBS.find(h => h.name === productName);
@@ -925,7 +933,8 @@ async function calculateFarming() {
       const animal = FARM_ANIMALS.find(a => a.name === productName);
       if (!animal) throw new Error('Animal not found');
 
-      const itemsToFetch = [animal.babyId, animal.grownId];
+      // Fetch grown animal price, product price, and favorite food price
+      const itemsToFetch = [animal.grownId, animal.favFoodId];
       if (animal.productId) itemsToFetch.push(animal.productId);
 
       const priceData = await fetchPricesBatch(itemsToFetch, [city]);
@@ -937,20 +946,24 @@ async function calculateFarming() {
         }
       }
 
-      const babyPrice = priceMap[animal.babyId]?.sell_price_min || 0;
+      const babyPrice = NPC_BABY_COST[animal.tier];
       const grownPrice = priceMap[animal.grownId]?.sell_price_min || 0;
       const productPrice = animal.productId ? (priceMap[animal.productId]?.sell_price_min || 0) : 0;
+      const foodPrice = priceMap[animal.favFoodId]?.sell_price_min || 0;
 
       const babiesPerCycle = plotCount * SEEDS_PER_PLOT;
+      const feedPerAnimal = FEED_AMOUNT_FAVORITE; // using favorite food
       const avgProductYield = premium ? 18 : 9;
       const hasBonus = cityBonus && cityBonus.animals.includes(productName);
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
 
       const totalBabyCost = babiesPerCycle * babyPrice;
+      const totalFeedCost = babiesPerCycle * feedPerAnimal * foodPrice;
+      const totalCost = totalBabyCost + totalFeedCost;
       const totalGrownRevenue = babiesPerCycle * grownPrice;
       const totalProductRevenue = animal.productId ? Math.floor(babiesPerCycle * avgProductYield * bonusMultiplier) * productPrice : 0;
       const totalRevenue = totalGrownRevenue + totalProductRevenue;
-      const profit = totalRevenue - totalBabyCost;
+      const profit = totalRevenue - totalCost;
       const growthHours = premium ? animal.growthHours / 2 : animal.growthHours;
       const dailyCycles = 24 / growthHours;
       const dailyProfit = Math.floor(profit * dailyCycles);
@@ -966,8 +979,12 @@ async function calculateFarming() {
         babyPrice,
         grownPrice,
         productPrice,
+        foodPrice,
+        feedPerAnimal,
         avgProductYield: Math.floor(avgProductYield * bonusMultiplier),
         totalBabyCost,
+        totalFeedCost,
+        totalCost,
         totalGrownRevenue,
         totalProductRevenue,
         totalRevenue,
@@ -982,7 +999,8 @@ async function calculateFarming() {
       const item = items.find(i => i.name === productName);
       if (!item) throw new Error(`${isHerb ? 'Herb' : 'Crop'} not found`);
 
-      const priceData = await fetchPricesBatch([item.seedId, item.productId], [city]);
+      // Only fetch product price — seed cost is NPC fixed
+      const priceData = await fetchPricesBatch([item.productId], [city]);
 
       const priceMap = {};
       for (const entry of priceData) {
@@ -991,7 +1009,7 @@ async function calculateFarming() {
         }
       }
 
-      const seedPrice = priceMap[item.seedId]?.sell_price_min || 0;
+      const seedPrice = NPC_SEED_COST[item.tier];
       const productPrice = priceMap[item.productId]?.sell_price_min || 0;
 
       const seedsPerCycle = plotCount * SEEDS_PER_PLOT;
@@ -1068,9 +1086,14 @@ function renderFarmingResults(data) {
               <div class="farm-stat-sub">${data.premium ? 'Premium (halved)' : 'Standard'}</div>
             </div>
             <div class="farm-stat">
-              <div class="farm-stat-label">Baby Price</div>
+              <div class="farm-stat-label">Baby Price (NPC)</div>
               <div class="farm-stat-value neutral">${formatSilver(data.babyPrice)}</div>
               <div class="farm-stat-sub">per baby animal</div>
+            </div>
+            <div class="farm-stat">
+              <div class="farm-stat-label">Feed Cost (${animal.favFood})</div>
+              <div class="farm-stat-value neutral">${formatSilver(data.foodPrice)}</div>
+              <div class="farm-stat-sub">${data.feedPerAnimal} per animal (fav food)</div>
             </div>
             <div class="farm-stat">
               <div class="farm-stat-label">Grown Price</div>
@@ -1091,7 +1114,8 @@ function renderFarmingResults(data) {
             </div>
           </div>
           <div class="farm-breakdown">
-            <div class="farm-breakdown-row"><span class="label">Total baby cost</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalBabyCost)}</span></div>
+            <div class="farm-breakdown-row"><span class="label">Baby cost (${data.babiesPerCycle} &times; ${formatSilver(data.babyPrice)} NPC)</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalBabyCost)}</span></div>
+            <div class="farm-breakdown-row"><span class="label">Feed cost (${data.babiesPerCycle} &times; ${data.feedPerAnimal} ${animal.favFood} &times; ${formatSilver(data.foodPrice)})</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalFeedCost)}</span></div>
             <div class="farm-breakdown-row"><span class="label">Grown animal revenue</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalGrownRevenue)}</span></div>
             ${animal.productId ? `<div class="farm-breakdown-row"><span class="label">${animal.productName} revenue</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalProductRevenue)}</span></div>` : ''}
             <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
@@ -1127,9 +1151,9 @@ function renderFarmingResults(data) {
               <div class="farm-stat-sub">${data.premium ? 'Premium (2x)' : 'Standard'}${data.hasBonus ? ' +10% bonus' : ''}</div>
             </div>
             <div class="farm-stat">
-              <div class="farm-stat-label">Seed Price</div>
+              <div class="farm-stat-label">Seed Price (NPC)</div>
               <div class="farm-stat-value neutral">${formatSilver(data.seedPrice)}</div>
-              <div class="farm-stat-sub">per seed</div>
+              <div class="farm-stat-sub">per seed (merchant)</div>
             </div>
             <div class="farm-stat">
               <div class="farm-stat-label">${crop.name} Price</div>
