@@ -743,40 +743,89 @@
       opacity: 0.5;
     }
 
-    /* ─── SIDEBAR TABS ─── */
-    .sidebar-tabs {
-      display: flex;
-      gap: 0;
+    /* ─── TOOLS MENU ─── */
+    .tools-menu {
       margin-bottom: 20px;
       border: 1px solid var(--border);
       border-radius: 8px;
       overflow: hidden;
     }
 
-    .sidebar-tab {
-      flex: 1;
+    .tools-menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 10px 12px;
       background: var(--bg-tertiary);
       border: none;
-      color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 600;
+      width: 100%;
       cursor: pointer;
-      text-align: center;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .tools-menu-header:hover { color: var(--text-primary); }
+
+    .tools-menu-chevron {
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+
+    .tools-menu.collapsed .tools-menu-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .tools-menu-items {
+      max-height: 200px;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+    }
+
+    .tools-menu.collapsed .tools-menu-items {
+      max-height: 0;
+    }
+
+    .tools-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-top: 1px solid var(--border);
+      background: none;
+      border-left: none;
+      border-right: none;
+      border-bottom: none;
+      width: 100%;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
       transition: all 0.15s;
-      border-right: 1px solid var(--border);
     }
 
-    .sidebar-tab:last-child { border-right: none; }
-
-    .sidebar-tab:hover {
-      color: var(--text-primary);
+    .tools-menu-item:hover {
       background: rgba(212, 168, 67, 0.06);
+      color: var(--text-primary);
     }
 
-    .sidebar-tab.active {
-      background: rgba(212, 168, 67, 0.12);
+    .tools-menu-item.active {
+      background: rgba(212, 168, 67, 0.1);
       color: var(--accent);
+    }
+
+    .tools-menu-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .tools-menu-item.active .tools-menu-dot {
+      background: var(--accent);
     }
 
     /* ─── RESPONSIVE ─── */
@@ -833,9 +882,17 @@
   <!-- ─── SIDEBAR ─── -->
   <div class="sidebar">
 
-    <!-- Tool Tabs -->
-    <div class="sidebar-tabs">
-      <button class="sidebar-tab active" onclick="switchTool('flipper', this)">Market Flipper</button>
+    <!-- Tools Menu -->
+    <div class="tools-menu" id="toolsMenu">
+      <button class="tools-menu-header" onclick="toggleToolsMenu()">
+        <span>Tools</span>
+        <span class="tools-menu-chevron">&#9660;</span>
+      </button>
+      <div class="tools-menu-items">
+        <button class="tools-menu-item active" onclick="selectTool('flipper', this)">
+          <span class="tools-menu-dot"></span> Market Flipper
+        </button>
+      </div>
     </div>
 
     <!-- Route Selection -->
@@ -874,6 +931,18 @@
           <option value="Brecilien">Brecilien</option>
         </select>
       </div>
+    </div>
+
+    <!-- Enchant Flipping -->
+    <div class="panel">
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="enchantFlipToggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <label for="enchantFlipToggle" style="margin-bottom:0; cursor:pointer;">Enable enchant flips</label>
+      </div>
+      <div class="tax-info">Uses buy-in city. Shows upgrade paths (.0&#8594;.1, .1&#8594;.2, etc.) with runes, souls &amp; relics.</div>
     </div>
 
     <!-- Categories -->
@@ -941,19 +1010,6 @@
         </label>
         <label for="showFavoritesOnly" style="margin-bottom:0; cursor:pointer;">Show favorites only</label>
       </div>
-    </div>
-
-    <!-- Enchant Flipping -->
-    <div class="panel">
-      <div class="panel-title">Enchant Flipping</div>
-      <div class="toggle-row">
-        <label class="toggle">
-          <input type="checkbox" id="enchantFlipToggle">
-          <span class="toggle-slider"></span>
-        </label>
-        <label for="enchantFlipToggle" style="margin-bottom:0; cursor:pointer;">Enable enchant flips</label>
-      </div>
-      <div class="tax-info">Uses buy-in city. Shows upgrade paths (.0&#8594;.1, .1&#8594;.2, etc.) with runes, souls &amp; relics.</div>
     </div>
 
     <!-- Actions -->

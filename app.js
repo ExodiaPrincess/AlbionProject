@@ -805,8 +805,12 @@ function toggleFavorite(itemId, btn) {
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════
 
-function switchTool(tool, el) {
-  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+function toggleToolsMenu() {
+  document.getElementById('toolsMenu').classList.toggle('collapsed');
+}
+
+function selectTool(tool, el) {
+  document.querySelectorAll('.tools-menu-item').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
 }
 
