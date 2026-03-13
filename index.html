@@ -687,6 +687,34 @@
       color: var(--text-muted);
     }
 
+    /* ─── ENCHANT PATH ─── */
+    .enchant-path {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .enchant-level {
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-family: monospace;
+    }
+
+    .enchant-0 { background: rgba(139, 148, 158, 0.15); color: var(--text-secondary); }
+    .enchant-1 { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+    .enchant-2 { background: rgba(88, 166, 255, 0.15); color: var(--blue); }
+    .enchant-3 { background: rgba(188, 128, 240, 0.15); color: #bc80f0; }
+
+    .enchant-arrow { color: var(--text-muted); font-size: 10px; }
+
+    .mat-cost {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
     /* ─── RESPONSIVE ─── */
     @media (max-width: 900px) {
       .app { flex-direction: column; }
@@ -762,7 +790,6 @@
           <option value="Fort Sterling">Fort Sterling</option>
           <option value="Lymhurst" selected>Lymhurst</option>
           <option value="Thetford">Thetford</option>
-          <option value="Black Market">Black Market</option>
           <option value="Brecilien">Brecilien</option>
         </select>
 
@@ -847,6 +874,35 @@
           <span class="toggle-slider"></span>
         </label>
         <label for="showFavoritesOnly" style="margin-bottom:0; cursor:pointer;">Show favorites only</label>
+      </div>
+    </div>
+
+    <!-- Enchant Flipping -->
+    <div class="panel">
+      <div class="panel-title">Enchant Flipping</div>
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="enchantFlipToggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <label for="enchantFlipToggle" style="margin-bottom:0; cursor:pointer;">Enable enchant flips</label>
+      </div>
+      <div id="enchantFlipControls" style="display:none;">
+        <label for="enchantMatCount">Materials per enchant</label>
+        <input type="number" id="enchantMatCount" value="48" min="1" step="1">
+        <div class="tax-info">
+          Scans upgrade paths (.0&#8594;.1, .0&#8594;.2, .1&#8594;.2, etc.) for equipment in a single city using runes, souls &amp; relics.
+        </div>
+        <label for="enchantCity">Enchant City</label>
+        <select id="enchantCity">
+          <option value="Caerleon">Caerleon</option>
+          <option value="Bridgewatch">Bridgewatch</option>
+          <option value="Martlock">Martlock</option>
+          <option value="Fort Sterling">Fort Sterling</option>
+          <option value="Lymhurst" selected>Lymhurst</option>
+          <option value="Thetford">Thetford</option>
+          <option value="Brecilien">Brecilien</option>
+        </select>
       </div>
     </div>
 

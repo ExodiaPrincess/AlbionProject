@@ -32,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('multiRouteToggle').addEventListener('change', (e) => {
     document.getElementById('singleRouteControls').style.display = e.target.checked ? 'none' : 'block';
   });
+  document.getElementById('enchantFlipToggle').addEventListener('change', (e) => {
+    document.getElementById('enchantFlipControls').style.display = e.target.checked ? 'block' : 'none';
+  });
 });
 
 function buildCategoryCheckboxes() {
@@ -224,6 +227,128 @@ function calculateFlips(priceData, originCity, destCity, applyTax) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ENCHANT FLIP CALCULATION
+// ═══════════════════════════════════════════════════════════
+
+function calculateEnchantFlips(priceData, city, matCount, applyTax) {
+  // Build price lookup: itemId -> { sell_price_min, buy_price_max }
+  const priceMap = {};
+  for (const entry of priceData) {
+    if (entry.city !== city) continue;
+    if (entry.quality !== 1) continue; // Only normal quality for enchant flips
+    priceMap[entry.item_id] = entry;
+  }
+
+  // Get material prices
+  const matPrices = {};
+  for (let tier = 4; tier <= 8; tier++) {
+    matPrices[tier] = {
+      rune: priceMap[`T${tier}_RUNE`]?.sell_price_min || 0,
+      soul: priceMap[`T${tier}_SOUL`]?.sell_price_min || 0,
+      relic: priceMap[`T${tier}_RELIC`]?.sell_price_min || 0
+    };
+  }
+
+  const flips = [];
+  const upgradePaths = [
+    { from: 0, to: 1, mats: ['rune'] },
+    { from: 0, to: 2, mats: ['rune', 'soul'] },
+    { from: 0, to: 3, mats: ['rune', 'soul', 'relic'] },
+    { from: 1, to: 2, mats: ['soul'] },
+    { from: 1, to: 3, mats: ['soul', 'relic'] },
+    { from: 2, to: 3, mats: ['relic'] }
+  ];
+
+  // Find all base items in the price data (items without @ that are equipment)
+  const baseItems = new Set();
+  for (const entry of priceData) {
+    if (entry.city !== city || entry.quality !== 1) continue;
+    const baseId = getBaseItemId(entry.item_id);
+    const tier = getItemTier(baseId);
+    if (tier >= 4) baseItems.add(baseId);
+  }
+
+  for (const baseId of baseItems) {
+    // Skip enchanting materials themselves
+    if (baseId.match(/T\d_(RUNE|SOUL|RELIC)$/)) continue;
+
+    const tier = getItemTier(baseId);
+    if (!matPrices[tier]) continue;
+
+    for (const path of upgradePaths) {
+      const fromId = path.from === 0 ? baseId : `${baseId}@${path.from}`;
+      const toId = `${baseId}@${path.to}`;
+
+      const fromData = priceMap[fromId];
+      const toData = priceMap[toId];
+
+      if (!fromData || !toData) continue;
+
+      const buyPrice = fromData.sell_price_min;
+      if (!buyPrice || buyPrice <= 0) continue;
+
+      // Calculate material costs
+      let materialCost = 0;
+      const matDetails = [];
+      for (const mat of path.mats) {
+        const matPrice = matPrices[tier][mat];
+        if (!matPrice || matPrice <= 0) continue;
+        const cost = matCount * matPrice;
+        materialCost += cost;
+        matDetails.push({ type: mat, count: matCount, unitPrice: matPrice, totalCost: cost });
+      }
+
+      // Sell price: prefer buy orders (instant sell)
+      let sellPrice = toData.buy_price_max;
+      let sellType = 'instant';
+      if (!sellPrice || sellPrice <= 0) {
+        sellPrice = toData.sell_price_min;
+        sellType = 'order';
+      }
+      if (!sellPrice || sellPrice <= 0) continue;
+
+      const taxRate = applyTax ? 0.08 : 0;
+      const taxAmount = Math.floor(sellPrice * taxRate);
+      const netSellPrice = sellPrice - taxAmount;
+      const totalCost = buyPrice + materialCost;
+      const profit = netSellPrice - totalCost;
+      const margin = (profit / totalCost) * 100;
+
+      if (profit <= 0) continue;
+
+      flips.push({
+        itemId: baseId,
+        quality: 1,
+        itemName: formatItemName(baseId),
+        originCity: city,
+        destCity: city,
+        buyPrice,
+        sellPrice,
+        netSellPrice,
+        taxAmount,
+        profit,
+        margin,
+        sellType,
+        tier,
+        enchantment: 0,
+        buyDate: fromData.sell_price_min_date,
+        sellDate: toData.buy_price_max_date,
+        // Enchant-specific fields
+        isEnchantFlip: true,
+        enchantFrom: path.from,
+        enchantTo: path.to,
+        materialCost,
+        matDetails,
+        fromItemId: fromId,
+        toItemId: toId
+      });
+    }
+  }
+
+  return flips;
+}
+
+// ═══════════════════════════════════════════════════════════
 // SCANNING
 // ═══════════════════════════════════════════════════════════
 
@@ -262,8 +387,9 @@ async function startScan() {
         updateProgress(pct);
       });
 
-      // Calculate flips for every city pair
+      // Calculate flips for every city pair (Black Market is sell-only)
       for (const origin of CITIES) {
+        if (origin === 'Black Market') continue;
         for (const dest of CITIES) {
           if (origin === dest) continue;
           const flips = calculateFlips(priceData, origin, dest, applyTax);
@@ -303,6 +429,50 @@ async function startScan() {
       resetScanButton();
       showProgress(false);
       return;
+    }
+  }
+
+  // ─── ENCHANT FLIPS ───
+  const enchantEnabled = document.getElementById('enchantFlipToggle').checked;
+  if (enchantEnabled) {
+    const enchantCity = document.getElementById('enchantCity').value;
+    const matCount = parseInt(document.getElementById('enchantMatCount').value) || 48;
+    const applyTax = document.getElementById('applyTax').checked;
+
+    // Get enchantable base items from selected categories
+    const enchantableItems = getEnchantableItems(selectedCategories);
+
+    if (enchantableItems.length > 0) {
+      setStatus(`Scanning ${enchantableItems.length} items for enchant upgrades in ${enchantCity}...`);
+      showProgress(true);
+
+      try {
+        // Build list of all enchanted variants + materials to fetch
+        const enchantItemIds = [];
+        const materialIds = new Set();
+        for (const baseId of enchantableItems) {
+          enchantItemIds.push(baseId);
+          enchantItemIds.push(`${baseId}@1`);
+          enchantItemIds.push(`${baseId}@2`);
+          enchantItemIds.push(`${baseId}@3`);
+          const tier = getItemTier(baseId);
+          if (tier >= 4) {
+            materialIds.add(`T${tier}_RUNE`);
+            materialIds.add(`T${tier}_SOUL`);
+            materialIds.add(`T${tier}_RELIC`);
+          }
+        }
+        enchantItemIds.push(...materialIds);
+
+        const enchantPriceData = await fetchAllPrices(enchantItemIds, [enchantCity], (pct) => {
+          updateProgress(pct);
+        });
+
+        const enchantFlips = calculateEnchantFlips(enchantPriceData, enchantCity, matCount, applyTax);
+        allFlips.push(...enchantFlips);
+      } catch (err) {
+        console.warn('Enchant flip scan error:', err);
+      }
     }
   }
 
@@ -453,6 +623,7 @@ function renderResults(flips) {
 
 function buildTable(flips, showRoute) {
   const qualityNames = { 1: 'Normal', 2: 'Good', 3: 'Outstanding', 4: 'Excellent', 5: 'Masterpiece' };
+  const hasEnchantFlips = flips.some(f => f.isEnchantFlip);
 
   let html = `
     <div class="results-table-wrapper">
@@ -461,7 +632,7 @@ function buildTable(flips, showRoute) {
         <tr>
           <th></th>
           <th>Item</th>
-          <th>Quality</th>
+          <th>${hasEnchantFlips ? 'Type' : 'Quality'}</th>
           ${showRoute ? '<th>Buy In</th><th>Sell In</th>' : ''}
           <th>Buy Price</th>
           <th>Sell Price</th>
@@ -483,6 +654,29 @@ function buildTable(flips, showRoute) {
     const sellAge = getRelativeTime(flip.sellDate);
     const oldestAge = buyAge.includes('day') || sellAge.includes('day') ? 'stale' : '';
 
+    // Type column content
+    let typeCol = '';
+    if (flip.isEnchantFlip) {
+      const matLabels = flip.matDetails.map(m => `${m.count}x ${m.type} (${formatSilver(m.totalCost)})`).join(' + ');
+      typeCol = `
+        <div class="enchant-path">
+          <span class="enchant-level enchant-${flip.enchantFrom}">.${flip.enchantFrom}</span>
+          <span class="enchant-arrow">&#9654;</span>
+          <span class="enchant-level enchant-${flip.enchantTo}">.${flip.enchantTo}</span>
+        </div>
+        <div class="mat-cost">${matLabels}</div>
+      `;
+    } else {
+      typeCol = qualityNames[flip.quality] || flip.quality;
+    }
+
+    // For enchant flips, show the target enchanted item icon
+    const iconItemId = flip.isEnchantFlip ? flip.toItemId : flip.itemId;
+    // Consume key suffix for enchant flips to make unique
+    const consumeDest = flip.isEnchantFlip
+      ? `${flip.destCity}_E${flip.enchantFrom}to${flip.enchantTo}`
+      : flip.destCity;
+
     html += `
       <tr class="${rowClass}">
         <td>
@@ -490,19 +684,19 @@ function buildTable(flips, showRoute) {
             ${isFav ? '&#9733;' : '&#9734;'}
           </button>
         </td>
-        <td><div class="item-cell"><img class="item-icon" src="${getItemIconUrl(flip.itemId)}" alt="" loading="lazy"><span class="item-name">${flip.itemName}</span></div></td>
-        <td style="color:var(--text-secondary); font-size:12px;">${qualityNames[flip.quality] || flip.quality}</td>
+        <td><div class="item-cell"><img class="item-icon" src="${getItemIconUrl(iconItemId)}" alt="" loading="lazy"><span class="item-name">${flip.itemName}</span></div></td>
+        <td style="color:var(--text-secondary); font-size:12px;">${typeCol}</td>
         ${showRoute ? `
           <td><span class="city-tag city-${flip.originCity.replace(/\s/g, '')}">${flip.originCity}</span></td>
           <td><span class="city-tag city-${flip.destCity.replace(/\s/g, '')}">${flip.destCity}</span></td>
         ` : ''}
-        <td class="price">${formatSilver(flip.buyPrice)}</td>
+        <td class="price">${formatSilver(flip.buyPrice)}${flip.isEnchantFlip ? `<br><span class="mat-cost">+${formatSilver(flip.materialCost)} mats</span>` : ''}</td>
         <td class="price">${formatSilver(flip.sellPrice)} <span style="font-size:10px; color:var(--text-muted);">${flip.sellType === 'instant' ? 'buy' : 'sell'}</span></td>
         <td class="price" style="color:var(--red); font-size:12px;">-${formatSilver(flip.taxAmount)}</td>
         <td class="price profit-positive">+${formatSilver(flip.profit)}</td>
         <td><span class="margin-badge ${marginClass}">${flip.margin.toFixed(1)}%</span></td>
         <td class="data-age"><span class="dot ${oldestAge}"></span> ${buyAge}</td>
-        <td><button class="consume-btn" onclick="consumeFlip('${flip.itemId}', ${flip.quality}, '${flip.originCity}', '${flip.destCity}')">Done</button></td>
+        <td><button class="consume-btn" onclick="consumeFlip('${flip.itemId}', ${flip.quality}, '${flip.originCity}', '${consumeDest}')">Done</button></td>
       </tr>
     `;
   }

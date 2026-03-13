@@ -304,6 +304,19 @@ const ITEM_DATABASE = {
       "T4_OFF_LAMP_UNDEAD", "T5_OFF_LAMP_UNDEAD", "T6_OFF_LAMP_UNDEAD", "T7_OFF_LAMP_UNDEAD", "T8_OFF_LAMP_UNDEAD",
       "T4_OFF_ORB_MORGANA", "T5_OFF_ORB_MORGANA", "T6_OFF_ORB_MORGANA", "T7_OFF_ORB_MORGANA", "T8_OFF_ORB_MORGANA"
     ]
+  },
+
+  // ─── ENCHANTING MATERIALS ───
+  "Enchanting Materials": {
+    "Runes": [
+      "T4_RUNE", "T5_RUNE", "T6_RUNE", "T7_RUNE", "T8_RUNE"
+    ],
+    "Souls": [
+      "T4_SOUL", "T5_SOUL", "T6_SOUL", "T7_SOUL", "T8_SOUL"
+    ],
+    "Relics": [
+      "T4_RELIC", "T5_RELIC", "T6_RELIC", "T7_RELIC", "T8_RELIC"
+    ]
   }
 };
 
@@ -384,7 +397,8 @@ function formatItemName(itemId) {
     'FISHSAUCE': 'Fish Sauce',
     'CAPEITEM_FW_BRIDGEWATCH': 'Bridgewatch Cape', 'CAPEITEM_FW_FORTSTERLING': 'Fort Sterling Cape',
     'CAPEITEM_FW_LYMHURST': 'Lymhurst Cape', 'CAPEITEM_FW_MARTLOCK': 'Martlock Cape',
-    'CAPEITEM_FW_THETFORD': 'Thetford Cape', 'CAPEITEM_FW_CAERLEON': 'Caerleon Cape'
+    'CAPEITEM_FW_THETFORD': 'Thetford Cape', 'CAPEITEM_FW_CAERLEON': 'Caerleon Cape',
+    'RUNE': 'Rune', 'SOUL': 'Soul', 'RELIC': 'Relic'
   };
 
   const readableName = nameMap[name] || name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -432,4 +446,40 @@ function getCategoryNames() {
 // Get subcategories
 function getSubcategories(category) {
   return Object.keys(ITEM_DATABASE[category] || {});
+}
+
+// Categories that contain enchantable equipment
+const ENCHANTABLE_CATEGORIES = [
+  'Warrior Weapons', 'Mage Weapons', 'Hunter Weapons',
+  'Armor', 'Gathering Gear', 'Accessories', 'Bags & Capes'
+];
+
+// Get base item ID (strip enchantment)
+function getBaseItemId(itemId) {
+  return itemId.split('@')[0];
+}
+
+// Get enchanting material ID for a tier and upgrade level
+function getEnchantMaterialId(tier, level) {
+  // level 1 = rune, level 2 = soul, level 3 = relic
+  const types = { 1: 'RUNE', 2: 'SOUL', 3: 'RELIC' };
+  return `T${tier}_${types[level]}`;
+}
+
+// Get enchantable items from selected categories (base items only, no @N variants)
+function getEnchantableItems(categories) {
+  const items = [];
+  for (const cat of categories) {
+    if (!ENCHANTABLE_CATEGORIES.includes(cat)) continue;
+    if (ITEM_DATABASE[cat]) {
+      for (const subcategory of Object.values(ITEM_DATABASE[cat])) {
+        for (const itemId of subcategory) {
+          if (!itemId.includes('@')) {
+            items.push(itemId);
+          }
+        }
+      }
+    }
+  }
+  return items;
 }
