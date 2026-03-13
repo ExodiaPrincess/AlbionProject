@@ -584,6 +584,109 @@
       color: var(--text-muted);
     }
 
+    /* ─── SETTINGS GEAR ─── */
+    .header-right {
+      margin-left: auto;
+      position: relative;
+    }
+
+    .gear-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 18px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .gear-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: rotate(30deg);
+    }
+
+    .gear-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .settings-dropdown {
+      display: none;
+      position: absolute;
+      top: 44px;
+      right: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      min-width: 200px;
+      z-index: 100;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .settings-dropdown.open { display: block; }
+
+    .settings-dropdown label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .server-options {
+      display: flex;
+      flex-direction: row;
+      gap: 6px;
+    }
+
+    .server-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      flex: 1;
+      text-align: center;
+    }
+
+    .server-option:hover {
+      background: rgba(212, 168, 67, 0.06);
+      color: var(--text-primary);
+    }
+
+    .server-option.active {
+      border-color: var(--accent);
+      background: rgba(212, 168, 67, 0.1);
+      color: var(--accent);
+    }
+
+    .server-option input[type="radio"] {
+      display: none;
+    }
+
+    .server-badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+    }
+
     /* ─── RESPONSIVE ─── */
     @media (max-width: 900px) {
       .app { flex-direction: column; }
@@ -610,6 +713,26 @@
 <div class="header">
   <h1>Albion Market Flipper</h1>
   <span class="subtitle">Transport Arbitrage Scanner</span>
+  <div class="header-right">
+    <button class="gear-btn" id="gearBtn" onclick="toggleSettings()" title="Settings">&#9881;</button>
+    <div class="settings-dropdown" id="settingsDropdown">
+      <label>Server Region</label>
+      <div class="server-options">
+        <label class="server-option active" onclick="setServer('west', this)">
+          <input type="radio" name="server" value="west" checked> Americas
+          <span class="server-badge">US West</span>
+        </label>
+        <label class="server-option" onclick="setServer('europe', this)">
+          <input type="radio" name="server" value="europe"> Europe
+          <span class="server-badge">EU</span>
+        </label>
+        <label class="server-option" onclick="setServer('east', this)">
+          <input type="radio" name="server" value="east"> Asia
+          <span class="server-badge">East</span>
+        </label>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ─── APP LAYOUT ─── -->

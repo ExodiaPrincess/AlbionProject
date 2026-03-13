@@ -2,7 +2,12 @@
 // Albion Market Flipper — Core Application
 // ═══════════════════════════════════════════════════════════
 
-const API_BASE = 'https://west.albion-online-data.com/api/v2/stats/prices';
+const API_SERVERS = {
+  west: 'https://west.albion-online-data.com/api/v2/stats/prices',
+  europe: 'https://europe.albion-online-data.com/api/v2/stats/prices',
+  east: 'https://east.albion-online-data.com/api/v2/stats/prices'
+};
+let currentServer = 'west';
 const CITIES = ['Caerleon', 'Bridgewatch', 'Martlock', 'Fort Sterling', 'Lymhurst', 'Thetford', 'Black Market', 'Brecilien'];
 const BATCH_SIZE = 80;       // Max items per API call (API limit is ~100)
 const BATCH_DELAY = 350;     // ms between batches to respect rate limits
@@ -72,7 +77,7 @@ function setCachedPrice(itemId, city, quality, data) {
 async function fetchPricesBatch(itemIds, locations) {
   const itemList = itemIds.join(',');
   const locList = locations.join(',');
-  const url = `${API_BASE}/${itemList}?locations=${locList}&qualities=1,2,3,4,5`;
+  const url = `${API_SERVERS[currentServer]}/${itemList}?locations=${locList}&qualities=1,2,3,4,5`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -549,6 +554,30 @@ function toggleFavorite(itemId, btn) {
 // ═══════════════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════
+
+function toggleSettings() {
+  const dropdown = document.getElementById('settingsDropdown');
+  const btn = document.getElementById('gearBtn');
+  const isOpen = dropdown.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+}
+
+function setServer(server, el) {
+  currentServer = server;
+  priceCache = {};
+  document.querySelectorAll('.server-option').forEach(opt => opt.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Close settings dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('settingsDropdown');
+  const btn = document.getElementById('gearBtn');
+  if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+    dropdown.classList.remove('open');
+    btn.classList.remove('active');
+  }
+});
 
 function formatSilver(amount) {
   if (amount >= 1000000) return (amount / 1000000).toFixed(1) + 'M';
