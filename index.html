@@ -61,13 +61,62 @@
       min-height: calc(100vh - 60px);
     }
 
-    /* ─── SIDEBAR ─── */
-    .sidebar {
-      width: 320px;
-      min-width: 320px;
+    /* ─── LEFT NAV ─── */
+    .left-nav {
+      width: 64px;
+      min-width: 64px;
       background: var(--bg-secondary);
       border-right: 1px solid var(--border);
-      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      gap: 4px;
+      overflow-y: auto;
+      max-height: calc(100vh - 60px);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 10px 4px;
+      width: 56px;
+      border: none;
+      border-radius: 8px;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 9px;
+      font-weight: 600;
+      text-align: center;
+      transition: all 0.15s;
+      line-height: 1.1;
+    }
+
+    .nav-item:hover {
+      background: rgba(212, 168, 67, 0.08);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: rgba(212, 168, 67, 0.12);
+      color: var(--accent);
+    }
+
+    .nav-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      width: 300px;
+      min-width: 300px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      padding: 16px;
       overflow-y: auto;
       max-height: calc(100vh - 60px);
     }
@@ -743,94 +792,22 @@
       opacity: 0.5;
     }
 
-    /* ─── TOOLS MENU ─── */
-    .tools-menu {
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .tools-menu-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      background: var(--bg-tertiary);
-      border: none;
-      width: 100%;
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .tools-menu-header:hover { color: var(--text-primary); }
-
-    .tools-menu-chevron {
-      font-size: 10px;
-      transition: transform 0.2s;
-    }
-
-    .tools-menu.collapsed .tools-menu-chevron {
-      transform: rotate(-90deg);
-    }
-
-    .tools-menu-items {
-      max-height: 200px;
-      overflow: hidden;
-      transition: max-height 0.25s ease;
-    }
-
-    .tools-menu.collapsed .tools-menu-items {
-      max-height: 0;
-    }
-
-    .tools-menu-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 12px;
-      border-top: 1px solid var(--border);
-      background: none;
-      border-left: none;
-      border-right: none;
-      border-bottom: none;
-      width: 100%;
-      cursor: pointer;
-      color: var(--text-secondary);
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.15s;
-    }
-
-    .tools-menu-item:hover {
-      background: rgba(212, 168, 67, 0.06);
-      color: var(--text-primary);
-    }
-
-    .tools-menu-item.active {
-      background: rgba(212, 168, 67, 0.1);
-      color: var(--accent);
-    }
-
-    .tools-menu-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--text-muted);
-      flex-shrink: 0;
-    }
-
-    .tools-menu-item.active .tools-menu-dot {
-      background: var(--accent);
-    }
+    /* (tools menu removed — using left-nav instead) */
 
     /* ─── RESPONSIVE ─── */
     @media (max-width: 900px) {
       .app { flex-direction: column; }
+      .left-nav {
+        flex-direction: row;
+        width: 100%;
+        min-width: 100%;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 8px 12px;
+      }
+      .nav-item { width: auto; flex-direction: row; gap: 6px; padding: 8px 12px; font-size: 11px; }
+      .nav-icon { font-size: 16px; }
       .sidebar {
         width: 100%;
         min-width: 100%;
@@ -879,21 +856,16 @@
 <!-- ─── APP LAYOUT ─── -->
 <div class="app">
 
+  <!-- ─── LEFT NAV ─── -->
+  <div class="left-nav">
+    <button class="nav-item active" onclick="selectTool('flipper', this)" title="Market Flipper">
+      <span class="nav-icon">&#9878;</span>
+      Flipper
+    </button>
+  </div>
+
   <!-- ─── SIDEBAR ─── -->
   <div class="sidebar">
-
-    <!-- Tools Menu -->
-    <div class="tools-menu" id="toolsMenu">
-      <button class="tools-menu-header" onclick="toggleToolsMenu()">
-        <span>Tools</span>
-        <span class="tools-menu-chevron">&#9660;</span>
-      </button>
-      <div class="tools-menu-items">
-        <button class="tools-menu-item active" onclick="selectTool('flipper', this)">
-          <span class="tools-menu-dot"></span> Market Flipper
-        </button>
-      </div>
-    </div>
 
     <!-- Route Selection -->
     <div class="panel">
