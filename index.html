@@ -856,16 +856,16 @@
         </div>
       </div>
 
-      <div class="tax-info">
-        Market tax: <strong>4%</strong> setup + <strong>4%</strong> sales = 8% total (applied to sell price)
+      <div class="tax-info" id="taxInfo">
+        Market tax: <strong>8%</strong> (setup fee always applied)
       </div>
 
       <div class="toggle-row">
         <label class="toggle">
-          <input type="checkbox" id="applyTax" checked>
+          <input type="checkbox" id="premiumTax">
           <span class="toggle-slider"></span>
         </label>
-        <label for="applyTax" style="margin-bottom:0; cursor:pointer;">Apply market tax (8%)</label>
+        <label for="premiumTax" style="margin-bottom:0; cursor:pointer;">Premium account (4% tax)</label>
       </div>
 
       <div class="toggle-row">
@@ -944,8 +944,7 @@
       <span>Sort by:</span>
       <button class="sort-chip active" data-sort="profit" onclick="setSort('profit')">Highest Profit</button>
       <button class="sort-chip" data-sort="margin" onclick="setSort('margin')">Highest Margin</button>
-      <button class="sort-chip" data-sort="buyPrice" onclick="setSort('buyPrice')">Lowest Buy</button>
-      <button class="sort-chip" data-sort="sellPrice" onclick="setSort('sellPrice')">Highest Sell</button>
+      <button class="sort-chip" data-sort="age" onclick="setSort('age')">Freshest Data</button>
     </div>
 
     <!-- Results -->

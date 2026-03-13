@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('enchantFlipToggle').addEventListener('change', (e) => {
     document.getElementById('enchantFlipControls').style.display = e.target.checked ? 'block' : 'none';
   });
+  document.getElementById('premiumTax').addEventListener('change', updateTaxLabel);
 });
 
 function buildCategoryCheckboxes() {
@@ -156,7 +157,22 @@ function sleep(ms) {
 // PROFIT CALCULATION ENGINE
 // ═══════════════════════════════════════════════════════════
 
-function calculateFlips(priceData, originCity, destCity, applyTax) {
+function getTaxRate() {
+  const premium = document.getElementById('premiumTax').checked;
+  return premium ? 0.04 : 0.08;
+}
+
+function updateTaxLabel() {
+  const premium = document.getElementById('premiumTax').checked;
+  const info = document.getElementById('taxInfo');
+  if (premium) {
+    info.innerHTML = 'Premium tax: <strong>4%</strong> (setup fee always applied)';
+  } else {
+    info.innerHTML = 'Market tax: <strong>8%</strong> (setup fee always applied)';
+  }
+}
+
+function calculateFlips(priceData, originCity, destCity) {
   // Group prices by item+quality
   const priceMap = {};
   for (const entry of priceData) {
@@ -194,7 +210,7 @@ function calculateFlips(priceData, originCity, destCity, applyTax) {
     if (!sellPrice || sellPrice <= 0) continue;
 
     // Calculate tax
-    const taxRate = applyTax ? 0.08 : 0;
+    const taxRate = getTaxRate();
     const taxAmount = Math.floor(sellPrice * taxRate);
     const netSellPrice = sellPrice - taxAmount;
 
@@ -230,7 +246,7 @@ function calculateFlips(priceData, originCity, destCity, applyTax) {
 // ENCHANT FLIP CALCULATION
 // ═══════════════════════════════════════════════════════════
 
-function calculateEnchantFlips(priceData, city, matCount, applyTax) {
+function calculateEnchantFlips(priceData, city, matCount) {
   // Build price lookup: itemId -> { sell_price_min, buy_price_max }
   const priceMap = {};
   for (const entry of priceData) {
@@ -307,7 +323,7 @@ function calculateEnchantFlips(priceData, city, matCount, applyTax) {
       }
       if (!sellPrice || sellPrice <= 0) continue;
 
-      const taxRate = applyTax ? 0.08 : 0;
+      const taxRate = getTaxRate();
       const taxAmount = Math.floor(sellPrice * taxRate);
       const netSellPrice = sellPrice - taxAmount;
       const totalCost = buyPrice + materialCost;
@@ -369,8 +385,6 @@ async function startScan() {
   }
 
   const multiRoute = document.getElementById('multiRouteToggle').checked;
-  const applyTax = document.getElementById('applyTax').checked;
-
   scanning = true;
   document.getElementById('scanBtn').disabled = true;
   document.getElementById('scanBtn').textContent = 'Scanning...';
@@ -392,7 +406,7 @@ async function startScan() {
         if (origin === 'Black Market') continue;
         for (const dest of CITIES) {
           if (origin === dest) continue;
-          const flips = calculateFlips(priceData, origin, dest, applyTax);
+          const flips = calculateFlips(priceData, origin, dest);
           allFlips.push(...flips);
         }
       }
@@ -422,7 +436,7 @@ async function startScan() {
         updateProgress(pct);
       });
 
-      allFlips = calculateFlips(priceData, originCity, destCity, applyTax);
+      allFlips = calculateFlips(priceData, originCity, destCity);
     } catch (err) {
       setStatus(`Error: ${err.message}`);
       scanning = false;
@@ -437,8 +451,6 @@ async function startScan() {
   if (enchantEnabled) {
     const enchantCity = document.getElementById('enchantCity').value;
     const matCount = parseInt(document.getElementById('enchantMatCount').value) || 48;
-    const applyTax = document.getElementById('applyTax').checked;
-
     // Get enchantable base items from selected categories
     const enchantableItems = getEnchantableItems(selectedCategories);
 
@@ -468,7 +480,7 @@ async function startScan() {
           updateProgress(pct);
         });
 
-        const enchantFlips = calculateEnchantFlips(enchantPriceData, enchantCity, matCount, applyTax);
+        const enchantFlips = calculateEnchantFlips(enchantPriceData, enchantCity, matCount);
         allFlips.push(...enchantFlips);
       } catch (err) {
         console.warn('Enchant flip scan error:', err);
@@ -542,11 +554,12 @@ function sortResults(results) {
     case 'margin':
       results.sort((a, b) => b.margin - a.margin);
       break;
-    case 'buyPrice':
-      results.sort((a, b) => a.buyPrice - b.buyPrice);
-      break;
-    case 'sellPrice':
-      results.sort((a, b) => b.sellPrice - a.sellPrice);
+    case 'age':
+      results.sort((a, b) => {
+        const aDate = Math.max(new Date(a.buyDate || 0).getTime(), new Date(a.sellDate || 0).getTime());
+        const bDate = Math.max(new Date(b.buyDate || 0).getTime(), new Date(b.sellDate || 0).getTime());
+        return bDate - aDate;
+      });
       break;
   }
 }
