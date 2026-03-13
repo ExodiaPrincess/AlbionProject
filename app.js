@@ -166,9 +166,9 @@ function updateTaxLabel() {
   const premium = document.getElementById('premiumTax').checked;
   const info = document.getElementById('taxInfo');
   if (premium) {
-    info.innerHTML = 'Premium tax: <strong>4%</strong> (setup fee always applied)';
+    info.innerHTML = 'Premium tax: <strong>4%</strong>';
   } else {
-    info.innerHTML = 'Market tax: <strong>8%</strong> (setup fee always applied)';
+    info.innerHTML = 'Market tax: <strong>8%</strong>';
   }
 }
 
