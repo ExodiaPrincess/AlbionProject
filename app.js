@@ -26,6 +26,12 @@ let lastScanTime = null;
 // INITIALIZATION
 // ═══════════════════════════════════════════════════════════
 
+const BLACK_MARKET_CATEGORIES = [
+  'Warrior Weapons', 'Mage Weapons', 'Hunter Weapons', 'Armor', 'Bags & Capes'
+];
+
+const WEAPON_CATEGORIES = ['Warrior Weapons', 'Mage Weapons', 'Hunter Weapons'];
+
 document.addEventListener('DOMContentLoaded', () => {
   buildCategoryCheckboxes();
   document.getElementById('showFavoritesOnly').addEventListener('change', applyFiltersAndRender);
@@ -36,24 +42,63 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('enchantFlipControls').style.display = e.target.checked ? 'block' : 'none';
   });
   document.getElementById('premiumTax').addEventListener('change', updateTaxLabel);
+  document.getElementById('destCity').addEventListener('change', onDestCityChange);
 });
+
+function onDestCityChange() {
+  const dest = document.getElementById('destCity').value;
+  if (dest === 'Black Market') {
+    document.querySelectorAll('#categoryGrid input[type="checkbox"]').forEach(cb => {
+      if (cb.dataset.weaponGroup) {
+        cb.checked = true; // Weapons are valid for Black Market
+      } else if (cb.value) {
+        cb.checked = BLACK_MARKET_CATEGORIES.includes(cb.value);
+      }
+    });
+  }
+}
 
 function buildCategoryCheckboxes() {
   const grid = document.getElementById('categoryGrid');
   const categories = getCategoryNames();
-  grid.innerHTML = categories.map(cat => {
-    const id = `cat_${cat.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    const count = getItemsByCategories([cat]).length;
-    return `<label><input type="checkbox" id="${id}" value="${cat}" checked> ${cat} <span style="color:var(--text-muted); font-size:11px;">(${count})</span></label>`;
-  }).join('');
+  let html = '';
+  let weaponsDone = false;
+
+  for (const cat of categories) {
+    if (WEAPON_CATEGORIES.includes(cat)) {
+      if (weaponsDone) continue;
+      weaponsDone = true;
+      // Combined "Weapons" group with all three weapon categories as hidden checkboxes
+      const totalCount = WEAPON_CATEGORIES.reduce((sum, wc) => sum + getItemsByCategories([wc]).length, 0);
+      html += `<label><input type="checkbox" id="cat_Weapons" data-weapon-group="true" checked onchange="toggleWeaponGroup(this)"> Weapons <span style="color:var(--text-muted); font-size:11px;">(${totalCount})</span></label>`;
+      // Hidden checkboxes for each weapon subcategory
+      for (const wc of WEAPON_CATEGORIES) {
+        const id = `cat_${wc.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        html += `<input type="checkbox" id="${id}" value="${wc}" checked style="display:none;">`;
+      }
+    } else {
+      const id = `cat_${cat.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const count = getItemsByCategories([cat]).length;
+      html += `<label><input type="checkbox" id="${id}" value="${cat}" checked> ${cat} <span style="color:var(--text-muted); font-size:11px;">(${count})</span></label>`;
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function toggleWeaponGroup(el) {
+  for (const wc of WEAPON_CATEGORIES) {
+    const id = `cat_${wc.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cb = document.getElementById(id);
+    if (cb) cb.checked = el.checked;
+  }
 }
 
 function selectAllCategories() {
-  document.querySelectorAll('#categoryGrid input').forEach(cb => cb.checked = true);
+  document.querySelectorAll('#categoryGrid input[type="checkbox"]').forEach(cb => cb.checked = true);
 }
 
 function deselectAllCategories() {
-  document.querySelectorAll('#categoryGrid input').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#categoryGrid input[type="checkbox"]').forEach(cb => cb.checked = false);
 }
 
 // ═══════════════════════════════════════════════════════════
