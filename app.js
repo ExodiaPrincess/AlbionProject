@@ -710,7 +710,10 @@ function buildTable(flips, showRoute) {
     let typeCol = '';
     if (flip.isEnchantFlip) {
       const matNames = { rune: 'Rune', soul: 'Soul', relic: 'Relic' };
-      const matLabels = flip.matDetails.map(m => `${m.count}x T${flip.tier} ${matNames[m.type]} (${formatSilver(m.unitPrice)} ea)`).join(' + ');
+      const matLabels = flip.matDetails.map(m => {
+        const matId = `T${flip.tier}_${m.type.toUpperCase()}`;
+        return `<span class="mat-item"><img class="mat-icon" src="${getItemIconUrl(matId)}" alt="${matNames[m.type]}">${m.count}x T${flip.tier} ${matNames[m.type]} <span class="mat-price">${formatSilver(m.unitPrice)} ea</span></span>`;
+      }).join('<span class="mat-sep">+</span>');
       typeCol = `
         <div class="enchant-path">
           <span class="enchant-level enchant-${flip.enchantFrom}">.${flip.enchantFrom}</span>
