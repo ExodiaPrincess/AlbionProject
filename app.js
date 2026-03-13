@@ -796,7 +796,7 @@ const FARM_CROPS = [
 ];
 
 const FARM_ANIMALS = [
-  { tier: 3, name: 'Chicken', babyId: 'T3_FARM_CHICKEN_BABY', grownId: 'T3_FARM_CHICKEN_GROWN', productId: 'T3_EGG',  productName: 'Egg',        growthHours: 22 },
+  { tier: 3, name: 'Chicken', babyId: 'T3_FARM_CHICKEN_BABY', grownId: 'T3_FARM_CHICKEN_GROWN', productId: 'T3_EGG',  productName: 'Hen Egg',    growthHours: 22 },
   { tier: 4, name: 'Goat',    babyId: 'T4_FARM_GOAT_BABY',    grownId: 'T4_FARM_GOAT_GROWN',    productId: 'T4_MILK', productName: 'Goat Milk',  growthHours: 44 },
   { tier: 5, name: 'Goose',   babyId: 'T5_FARM_GOOSE_BABY',   grownId: 'T5_FARM_GOOSE_GROWN',   productId: 'T5_EGG',  productName: 'Goose Egg',  growthHours: 66 },
   { tier: 6, name: 'Sheep',   babyId: 'T6_FARM_SHEEP_BABY',   grownId: 'T6_FARM_SHEEP_GROWN',   productId: 'T6_MILK', productName: 'Sheep Milk', growthHours: 88 },
@@ -804,26 +804,41 @@ const FARM_ANIMALS = [
   { tier: 8, name: 'Cow',     babyId: 'T8_FARM_COW_BABY',     grownId: 'T8_FARM_COW_GROWN',     productId: 'T8_MILK', productName: 'Cow Milk',   growthHours: 132 }
 ];
 
+const FARM_HERBS = [
+  { tier: 2, name: 'Arcane Agaric',        seedId: 'T2_FARM_AGARIC_SEED',   productId: 'T2_AGARIC' },
+  { tier: 3, name: 'Brightleaf Comfrey',    seedId: 'T3_FARM_COMFREY_SEED',  productId: 'T3_COMFREY' },
+  { tier: 4, name: 'Crenellated Burdock',   seedId: 'T4_FARM_BURDOCK_SEED',  productId: 'T4_BURDOCK' },
+  { tier: 5, name: 'Dragon Teasel',         seedId: 'T5_FARM_TEASEL_SEED',   productId: 'T5_TEASEL' },
+  { tier: 6, name: 'Elusive Foxglove',      seedId: 'T6_FARM_FOXGLOVE_SEED', productId: 'T6_FOXGLOVE' },
+  { tier: 7, name: 'Firetouched Mullein',   seedId: 'T7_FARM_MULLEIN_SEED',  productId: 'T7_MULLEIN' },
+  { tier: 8, name: 'Ghoul Yarrow',          seedId: 'T8_FARM_YARROW_SEED',   productId: 'T8_YARROW' }
+];
+
 const CITY_FARM_BONUSES = {
-  'Fort Sterling': { crop: 'Turnip',  animal: 'Chicken' },
-  'Lymhurst':      { crop: 'Carrot',  animal: 'Goose' },
-  'Bridgewatch':   { crop: 'Bean',    animal: 'Goat' },
-  'Martlock':      { crop: 'Wheat',   animal: 'Cow' },
-  'Thetford':      { crop: 'Cabbage', animal: 'Pig' },
-  'Caerleon':      { crop: null,      animal: null },
-  'Brecilien':     { crop: 'all',     animal: null }
+  'Fort Sterling': { crops: ['Turnip'],   animals: ['Chicken', 'Sheep'], herbs: ['Ghoul Yarrow'] },
+  'Lymhurst':      { crops: ['Carrot', 'Pumpkin'],  animals: ['Goose'],  herbs: ['Crenellated Burdock'] },
+  'Bridgewatch':   { crops: ['Bean', 'Corn'],        animals: ['Goat'],   herbs: ['Dragon Teasel'] },
+  'Martlock':      { crops: ['Wheat', 'Potato'],     animals: ['Cow'],    herbs: ['Elusive Foxglove'] },
+  'Thetford':      { crops: ['Cabbage'],  animals: [],       herbs: ['Arcane Agaric', 'Firetouched Mullein'] },
+  'Caerleon':      { crops: [],           animals: [],       herbs: ['Brightleaf Comfrey', 'Dragon Teasel', 'Firetouched Mullein'] },
+  'Brecilien':     { crops: ['Carrot', 'Bean', 'Wheat', 'Turnip', 'Cabbage', 'Potato', 'Corn', 'Pumpkin'], animals: [], herbs: [] }
 };
 
+function getFarmType() {
+  return document.getElementById('farmTypeSelect').value; // 'crops', 'animals', or 'herbs'
+}
+
 function onFarmTypeChange() {
-  const isAnimal = document.getElementById('farmTypeToggle').checked;
-  document.getElementById('farmTypeLabel').textContent = isAnimal ? 'Animals (Pastures)' : 'Crops (Farms)';
   populateFarmProducts();
 }
 
 function populateFarmProducts() {
-  const isAnimal = document.getElementById('farmTypeToggle').checked;
+  const farmType = getFarmType();
   const select = document.getElementById('farmProduct');
-  const items = isAnimal ? FARM_ANIMALS : FARM_CROPS;
+  let items;
+  if (farmType === 'animals') items = FARM_ANIMALS;
+  else if (farmType === 'herbs') items = FARM_HERBS;
+  else items = FARM_CROPS;
 
   select.innerHTML = items.map(item =>
     `<option value="${item.name}">T${item.tier} ${item.name}</option>`
@@ -834,11 +849,11 @@ function populateFarmProducts() {
 }
 
 function onFarmProductChange() {
-  const isAnimal = document.getElementById('farmTypeToggle').checked;
+  const farmType = getFarmType();
   const productName = document.getElementById('farmProduct').value;
   const info = document.getElementById('farmProductInfo');
 
-  if (isAnimal) {
+  if (farmType === 'animals') {
     const animal = FARM_ANIMALS.find(a => a.name === productName);
     if (animal) {
       const products = animal.productName ? `Produces: ${animal.productName} (7-11 per animal)` : 'Butcher only (no secondary products)';
@@ -846,6 +861,11 @@ function onFarmProductChange() {
       const hours = animal.growthHours % 24;
       const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
       info.innerHTML = `${SEEDS_PER_PLOT} babies per pasture &middot; ${timeStr} growth<br>${products}`;
+    }
+  } else if (farmType === 'herbs') {
+    const herb = FARM_HERBS.find(h => h.name === productName);
+    if (herb) {
+      info.innerHTML = `${SEEDS_PER_PLOT} seeds per herb garden &middot; 22h growth<br>Yield: 3-6 per seed (avg 4.5) &middot; 2x with Premium`;
     }
   } else {
     const crop = FARM_CROPS.find(c => c.name === productName);
@@ -859,7 +879,7 @@ function onFarmProductChange() {
 
 function updateFarmBonusInfo() {
   const city = document.getElementById('farmCity').value;
-  const isAnimal = document.getElementById('farmTypeToggle').checked;
+  const farmType = getFarmType();
   const productName = document.getElementById('farmProduct').value;
   const bonusInfo = document.getElementById('farmBonusInfo');
   const cityBonus = CITY_FARM_BONUSES[city];
@@ -869,18 +889,18 @@ function updateFarmBonusInfo() {
     return;
   }
 
-  const bonusTarget = isAnimal ? cityBonus.animal : cityBonus.crop;
-  if (bonusTarget === 'all') {
-    bonusInfo.innerHTML = `&#10003; ${city} gives <strong>+10% yield bonus</strong> for all ${isAnimal ? 'animals' : 'crops'}!`;
-    bonusInfo.classList.add('visible');
-  } else if (bonusTarget === productName) {
+  const bonusList = farmType === 'animals' ? cityBonus.animals :
+                    farmType === 'herbs' ? cityBonus.herbs : cityBonus.crops;
+  const typeLabel = farmType === 'animals' ? 'animal' : farmType === 'herbs' ? 'herb' : 'crop';
+
+  if (bonusList.includes(productName)) {
     bonusInfo.innerHTML = `&#10003; ${city} gives <strong>+10% yield bonus</strong> for ${productName}!`;
     bonusInfo.classList.add('visible');
-  } else if (bonusTarget) {
-    bonusInfo.innerHTML = `${city} bonus: ${bonusTarget} (${isAnimal ? 'animal' : 'crop'})`;
+  } else if (bonusList.length > 0) {
+    bonusInfo.innerHTML = `${city} ${typeLabel} bonus: ${bonusList.join(', ')}`;
     bonusInfo.classList.add('visible');
   } else {
-    bonusInfo.innerHTML = `No ${isAnimal ? 'animal' : 'crop'} bonus in ${city}`;
+    bonusInfo.innerHTML = `No ${typeLabel} bonus in ${city}`;
     bonusInfo.classList.add('visible');
   }
 }
@@ -888,7 +908,7 @@ function updateFarmBonusInfo() {
 async function calculateFarming() {
   const city = document.getElementById('farmCity').value;
   const islandLevel = parseInt(document.getElementById('islandLevel').value);
-  const isAnimal = document.getElementById('farmTypeToggle').checked;
+  const farmType = getFarmType();
   const productName = document.getElementById('farmProduct').value;
   const premium = document.getElementById('farmPremium').checked;
   const plotCount = Math.min(parseInt(document.getElementById('farmPlotCount').value) || 1, FARM_PLOTS[islandLevel]);
@@ -898,13 +918,13 @@ async function calculateFarming() {
   btn.textContent = 'Fetching prices...';
 
   const container = document.getElementById('farmingContent');
+  const cityBonus = CITY_FARM_BONUSES[city];
 
   try {
-    if (isAnimal) {
+    if (farmType === 'animals') {
       const animal = FARM_ANIMALS.find(a => a.name === productName);
       if (!animal) throw new Error('Animal not found');
 
-      // Fetch baby price + grown price + product price
       const itemsToFetch = [animal.babyId, animal.grownId];
       if (animal.productId) itemsToFetch.push(animal.productId);
 
@@ -922,9 +942,8 @@ async function calculateFarming() {
       const productPrice = animal.productId ? (priceMap[animal.productId]?.sell_price_min || 0) : 0;
 
       const babiesPerCycle = plotCount * SEEDS_PER_PLOT;
-      const avgProductYield = premium ? 18 : 9; // 7-11 avg ~9, doubled with premium
-      const cityBonus = CITY_FARM_BONUSES[city];
-      const hasBonus = cityBonus && (cityBonus.animal === productName || cityBonus.animal === 'all');
+      const avgProductYield = premium ? 18 : 9;
+      const hasBonus = cityBonus && cityBonus.animals.includes(productName);
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
 
       const totalBabyCost = babiesPerCycle * babyPrice;
@@ -937,7 +956,7 @@ async function calculateFarming() {
       const dailyProfit = Math.floor(profit * dailyCycles);
 
       renderFarmingResults({
-        isAnimal: true,
+        farmType: 'animals',
         animal,
         city,
         plotCount,
@@ -957,10 +976,13 @@ async function calculateFarming() {
         dailyProfit
       });
     } else {
-      const crop = FARM_CROPS.find(c => c.name === productName);
-      if (!crop) throw new Error('Crop not found');
+      // Crops and herbs share same calculation logic
+      const isHerb = farmType === 'herbs';
+      const items = isHerb ? FARM_HERBS : FARM_CROPS;
+      const item = items.find(i => i.name === productName);
+      if (!item) throw new Error(`${isHerb ? 'Herb' : 'Crop'} not found`);
 
-      const priceData = await fetchPricesBatch([crop.seedId, crop.productId], [city]);
+      const priceData = await fetchPricesBatch([item.seedId, item.productId], [city]);
 
       const priceMap = {};
       for (const entry of priceData) {
@@ -969,25 +991,25 @@ async function calculateFarming() {
         }
       }
 
-      const seedPrice = priceMap[crop.seedId]?.sell_price_min || 0;
-      const productPrice = priceMap[crop.productId]?.sell_price_min || 0;
+      const seedPrice = priceMap[item.seedId]?.sell_price_min || 0;
+      const productPrice = priceMap[item.productId]?.sell_price_min || 0;
 
       const seedsPerCycle = plotCount * SEEDS_PER_PLOT;
       const avgYieldPerSeed = premium ? 9 : 4.5;
-      const cityBonus = CITY_FARM_BONUSES[city];
-      const hasBonus = cityBonus && (cityBonus.crop === productName || cityBonus.crop === 'all');
+      const bonusList = isHerb ? cityBonus.herbs : cityBonus.crops;
+      const hasBonus = cityBonus && bonusList.includes(productName);
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
       const totalProduct = Math.floor(seedsPerCycle * avgYieldPerSeed * bonusMultiplier);
 
       const totalSeedCost = seedsPerCycle * seedPrice;
       const totalRevenue = totalProduct * productPrice;
       const profit = totalRevenue - totalSeedCost;
-      const dailyCycles = 24 / 22; // ~1.09 cycles per day
+      const dailyCycles = 24 / 22;
       const dailyProfit = Math.floor(profit * dailyCycles);
 
       renderFarmingResults({
-        isAnimal: false,
-        crop,
+        farmType,
+        crop: item,
         city,
         plotCount,
         premium,
@@ -1020,7 +1042,7 @@ async function calculateFarming() {
 function renderFarmingResults(data) {
   const container = document.getElementById('farmingContent');
 
-  if (data.isAnimal) {
+  if (data.farmType === 'animals') {
     const animal = data.animal;
     const iconUrl = getItemIconUrl(animal.babyId);
     const grownIconUrl = getItemIconUrl(animal.grownId);
@@ -1090,7 +1112,7 @@ function renderFarmingResults(data) {
         <div class="farm-card">
           <div class="farm-card-title">
             <img src="${productIconUrl}" alt="${crop.name}">
-            T${crop.tier} ${crop.name} Farm — ${data.city}
+            T${crop.tier} ${crop.name} ${data.farmType === 'herbs' ? 'Herb Garden' : 'Farm'} — ${data.city}
             ${data.hasBonus ? '<span class="farm-bonus-badge">+10% City Bonus</span>' : ''}
           </div>
           <div class="farm-stat-grid">
@@ -1127,7 +1149,7 @@ function renderFarmingResults(data) {
           </div>
           <div class="farm-breakdown">
             <div class="farm-breakdown-row"><span class="label">Total seed cost (${data.seedsPerCycle} &times; ${formatSilver(data.seedPrice)})</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalSeedCost)}</span></div>
-            <div class="farm-breakdown-row"><span class="label">Crop revenue (${data.totalProduct} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalRevenue)}</span></div>
+            <div class="farm-breakdown-row"><span class="label">${data.farmType === 'herbs' ? 'Herb' : 'Crop'} revenue (${data.totalProduct} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalRevenue)}</span></div>
             <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
               <span class="label" style="font-weight:700; color:var(--text-primary);">Net Profit</span>
               <span class="value" style="color:${data.profit >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:16px;">${data.profit >= 0 ? '+' : ''}${formatSilver(data.profit)}</span>

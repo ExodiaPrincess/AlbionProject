@@ -1146,13 +1146,12 @@
       <div class="panel">
         <div class="panel-title">Product</div>
 
-        <div class="toggle-row">
-          <label class="toggle">
-            <input type="checkbox" id="farmTypeToggle" onchange="onFarmTypeChange()">
-            <span class="toggle-slider"></span>
-          </label>
-          <label for="farmTypeToggle" style="margin-bottom:0; cursor:pointer;" id="farmTypeLabel">Crops</label>
-        </div>
+        <label for="farmTypeSelect">Farm Type</label>
+        <select id="farmTypeSelect" onchange="onFarmTypeChange()">
+          <option value="crops">🌾 Crops (Farms)</option>
+          <option value="animals">🐄 Animals (Pastures)</option>
+          <option value="herbs">🌿 Herbs (Herb Gardens)</option>
+        </select>
 
         <label for="farmProduct">Select Product</label>
         <select id="farmProduct" onchange="onFarmProductChange()"></select>
