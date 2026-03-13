@@ -715,6 +715,42 @@
       color: var(--text-muted);
     }
 
+    /* ─── SIDEBAR TABS ─── */
+    .sidebar-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .sidebar-tab {
+      flex: 1;
+      padding: 10px 12px;
+      background: var(--bg-tertiary);
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      border-right: 1px solid var(--border);
+    }
+
+    .sidebar-tab:last-child { border-right: none; }
+
+    .sidebar-tab:hover {
+      color: var(--text-primary);
+      background: rgba(212, 168, 67, 0.06);
+    }
+
+    .sidebar-tab.active {
+      background: rgba(212, 168, 67, 0.12);
+      color: var(--accent);
+    }
+
     /* ─── RESPONSIVE ─── */
     @media (max-width: 900px) {
       .app { flex-direction: column; }
@@ -768,6 +804,11 @@
 
   <!-- ─── SIDEBAR ─── -->
   <div class="sidebar">
+
+    <!-- Tool Tabs -->
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" onclick="switchTool('flipper', this)">Market Flipper</button>
+    </div>
 
     <!-- Route Selection -->
     <div class="panel">
@@ -856,17 +897,14 @@
         </div>
       </div>
 
-      <div class="tax-info" id="taxInfo">
-        Market tax: <strong>8%</strong>
-      </div>
-
       <div class="toggle-row">
         <label class="toggle">
           <input type="checkbox" id="premiumTax">
           <span class="toggle-slider"></span>
         </label>
-        <label for="premiumTax" style="margin-bottom:0; cursor:pointer;">Premium account (4% tax)</label>
+        <label for="premiumTax" style="margin-bottom:0; cursor:pointer;">Premium (4% tax)</label>
       </div>
+      <div class="tax-info" id="taxInfo">Tax: <strong>8%</strong></div>
 
       <div class="toggle-row">
         <label class="toggle">

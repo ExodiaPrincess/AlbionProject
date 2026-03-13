@@ -210,11 +210,7 @@ function getTaxRate() {
 function updateTaxLabel() {
   const premium = document.getElementById('premiumTax').checked;
   const info = document.getElementById('taxInfo');
-  if (premium) {
-    info.innerHTML = 'Premium tax: <strong>4%</strong>';
-  } else {
-    info.innerHTML = 'Market tax: <strong>8%</strong>';
-  }
+  info.innerHTML = premium ? 'Tax: <strong>4%</strong>' : 'Tax: <strong>8%</strong>';
 }
 
 function calculateFlips(priceData, originCity, destCity) {
@@ -715,7 +711,8 @@ function buildTable(flips, showRoute) {
     // Type column content
     let typeCol = '';
     if (flip.isEnchantFlip) {
-      const matLabels = flip.matDetails.map(m => `${m.count}x ${m.type} (${formatSilver(m.totalCost)})`).join(' + ');
+      const matNames = { rune: 'Rune', soul: 'Soul', relic: 'Relic' };
+      const matLabels = flip.matDetails.map(m => `${m.count}x T${flip.tier} ${matNames[m.type]} (${formatSilver(m.unitPrice)} ea)`).join(' + ');
       typeCol = `
         <div class="enchant-path">
           <span class="enchant-level enchant-${flip.enchantFrom}">.${flip.enchantFrom}</span>
@@ -806,6 +803,11 @@ function toggleFavorite(itemId, btn) {
 // ═══════════════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════
+
+function switchTool(tool, el) {
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
 
 function toggleSettings() {
   const dropdown = document.getElementById('settingsDropdown');
