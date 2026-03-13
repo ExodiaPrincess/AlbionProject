@@ -26,10 +26,10 @@ let lastScanTime = null;
 // ═══════════════════════════════════════════════════════════
 
 const BLACK_MARKET_CATEGORIES = [
-  'Warrior Weapons', 'Mage Weapons', 'Hunter Weapons', 'Armor', 'Bags & Capes'
+  'Warrior Weapons', 'Mage Weapons', 'Hunter Weapons', 'Accessories', 'Armor', 'Bags & Capes'
 ];
 
-const WEAPON_CATEGORIES = ['Warrior Weapons', 'Mage Weapons', 'Hunter Weapons'];
+const WEAPON_CATEGORIES = ['Warrior Weapons', 'Mage Weapons', 'Hunter Weapons', 'Accessories'];
 
 document.addEventListener('DOMContentLoaded', () => {
   buildCategoryCheckboxes();
@@ -74,7 +74,7 @@ function buildCategoryCheckboxes() {
       weaponsDone = true;
       // Combined "Weapons" group with all three weapon categories as hidden checkboxes
       const totalCount = WEAPON_CATEGORIES.reduce((sum, wc) => sum + getItemsByCategories([wc]).length, 0);
-      html += `<label><input type="checkbox" id="cat_Weapons" data-weapon-group="true" checked onchange="toggleWeaponGroup(this)"> Weapons <span style="color:var(--text-muted); font-size:11px;">(${totalCount})</span></label>`;
+      html += `<label><input type="checkbox" id="cat_Weapons" data-weapon-group="true" checked onchange="toggleWeaponGroup(this)"> Weapons & Accessories <span style="color:var(--text-muted); font-size:11px;">(${totalCount})</span></label>`;
       // Hidden checkboxes for each weapon subcategory
       for (const wc of WEAPON_CATEGORIES) {
         const id = `cat_${wc.replace(/[^a-zA-Z0-9]/g, '_')}`;
