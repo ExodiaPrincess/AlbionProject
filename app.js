@@ -809,7 +809,9 @@ const CITY_FARM_BONUSES = {
   'Lymhurst':      { crop: 'Carrot',  animal: 'Goose' },
   'Bridgewatch':   { crop: 'Bean',    animal: 'Goat' },
   'Martlock':      { crop: 'Wheat',   animal: 'Cow' },
-  'Thetford':      { crop: 'Cabbage', animal: 'Pig' }
+  'Thetford':      { crop: 'Cabbage', animal: 'Pig' },
+  'Caerleon':      { crop: null,      animal: null },
+  'Brecilien':     { crop: 'all',     animal: null }
 };
 
 function onFarmTypeChange() {
@@ -868,11 +870,17 @@ function updateFarmBonusInfo() {
   }
 
   const bonusTarget = isAnimal ? cityBonus.animal : cityBonus.crop;
-  if (bonusTarget === productName) {
+  if (bonusTarget === 'all') {
+    bonusInfo.innerHTML = `&#10003; ${city} gives <strong>+10% yield bonus</strong> for all ${isAnimal ? 'animals' : 'crops'}!`;
+    bonusInfo.classList.add('visible');
+  } else if (bonusTarget === productName) {
     bonusInfo.innerHTML = `&#10003; ${city} gives <strong>+10% yield bonus</strong> for ${productName}!`;
     bonusInfo.classList.add('visible');
+  } else if (bonusTarget) {
+    bonusInfo.innerHTML = `${city} bonus: ${bonusTarget} (${isAnimal ? 'animal' : 'crop'})`;
+    bonusInfo.classList.add('visible');
   } else {
-    bonusInfo.innerHTML = `${city} bonus: ${isAnimal ? cityBonus.animal : cityBonus.crop} (${isAnimal ? 'animal' : 'crop'})`;
+    bonusInfo.innerHTML = `No ${isAnimal ? 'animal' : 'crop'} bonus in ${city}`;
     bonusInfo.classList.add('visible');
   }
 }
@@ -916,7 +924,7 @@ async function calculateFarming() {
       const babiesPerCycle = plotCount * SEEDS_PER_PLOT;
       const avgProductYield = premium ? 18 : 9; // 7-11 avg ~9, doubled with premium
       const cityBonus = CITY_FARM_BONUSES[city];
-      const hasBonus = cityBonus && cityBonus.animal === productName;
+      const hasBonus = cityBonus && (cityBonus.animal === productName || cityBonus.animal === 'all');
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
 
       const totalBabyCost = babiesPerCycle * babyPrice;
@@ -967,7 +975,7 @@ async function calculateFarming() {
       const seedsPerCycle = plotCount * SEEDS_PER_PLOT;
       const avgYieldPerSeed = premium ? 9 : 4.5;
       const cityBonus = CITY_FARM_BONUSES[city];
-      const hasBonus = cityBonus && cityBonus.crop === productName;
+      const hasBonus = cityBonus && (cityBonus.crop === productName || cityBonus.crop === 'all');
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
       const totalProduct = Math.floor(seedsPerCycle * avgYieldPerSeed * bonusMultiplier);
 
