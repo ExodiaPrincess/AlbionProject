@@ -750,7 +750,7 @@ function buildTable(flips, showRoute) {
         <td class="price profit-positive">+${formatSilver(flip.profit)}</td>
         <td><span class="margin-badge ${marginClass}">${flip.margin.toFixed(1)}%</span></td>
         <td class="data-age"><span class="dot ${oldestAge}"></span> ${buyAge}</td>
-        <td><button class="consume-btn" onclick="consumeFlip('${flip.itemId}', ${flip.quality}, '${flip.originCity}', '${consumeDest}')">Done</button></td>
+        <td style="text-align:center;"><button class="consume-btn" onclick="consumeFlip(this, '${flip.itemId}', ${flip.quality}, '${flip.originCity}', '${consumeDest}')">Done</button></td>
       </tr>
     `;
   }
@@ -759,10 +759,14 @@ function buildTable(flips, showRoute) {
   return html;
 }
 
-function consumeFlip(itemId, quality, origin, dest) {
-  const key = `${itemId}__${quality}__${origin}__${dest}`;
-  consumed.add(key);
-  applyFiltersAndRender();
+function consumeFlip(btn, itemId, quality, origin, dest) {
+  btn.classList.add('clicked');
+  btn.disabled = true;
+  setTimeout(() => {
+    const key = `${itemId}__${quality}__${origin}__${dest}`;
+    consumed.add(key);
+    applyFiltersAndRender();
+  }, 400);
 }
 
 function getItemIconUrl(itemId) {

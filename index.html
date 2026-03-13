@@ -473,7 +473,7 @@
     tbody tr.high-profit { background: var(--profit-glow); }
 
     tbody td {
-      padding: 10px 14px;
+      padding: 14px 14px;
       white-space: nowrap;
     }
 
@@ -498,12 +498,12 @@
     .consume-btn {
       background: none;
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 11px;
-      padding: 3px 8px;
+      font-size: 12px;
+      padding: 6px 14px;
       color: var(--text-muted);
-      transition: all 0.15s;
+      transition: all 0.2s ease;
       white-space: nowrap;
     }
 
@@ -511,6 +511,19 @@
       border-color: var(--green);
       color: var(--green);
       background: rgba(63, 185, 80, 0.1);
+    }
+
+    .consume-btn.clicked {
+      animation: consumePop 0.4s ease;
+      border-color: var(--green);
+      color: var(--green);
+      background: rgba(63, 185, 80, 0.15);
+    }
+
+    @keyframes consumePop {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.2); background: rgba(63, 185, 80, 0.3); }
+      100% { transform: scale(1); }
     }
 
     .city-tag {
@@ -749,23 +762,23 @@
     .enchant-arrow { color: var(--text-muted); font-size: 10px; }
 
     .mat-cost {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-muted);
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 2px;
+      gap: 4px;
     }
 
     .mat-item {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
     }
 
     .mat-icon {
-      width: 20px;
-      height: 20px;
+      width: 28px;
+      height: 28px;
       image-rendering: pixelated;
       vertical-align: middle;
     }
@@ -777,7 +790,7 @@
 
     .mat-sep {
       color: var(--text-muted);
-      margin: 0 2px;
+      margin: 0 3px;
       opacity: 0.5;
     }
 
