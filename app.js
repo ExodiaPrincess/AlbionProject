@@ -781,7 +781,7 @@ function getItemIconUrl(itemId) {
 // FARMING CALCULATOR
 // ═══════════════════════════════════════════════════════════
 
-const FARM_PLOTS = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 5 };
+const FARM_PLOTS = { 1: 1, 2: 3, 3: 6, 4: 9, 5: 12, 6: 16 };
 const SEEDS_PER_PLOT = 9;
 
 const FARM_CROPS = [
