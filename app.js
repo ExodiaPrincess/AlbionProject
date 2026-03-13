@@ -17,7 +17,6 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minute cache
 let priceCache = {};         // { itemId_city_quality: { data, timestamp } }
 let currentResults = [];     // Current filtered+sorted results
 let currentSort = 'profit';
-let favorites = loadFavorites();
 let consumed = new Set();     // Flips consumed this session
 let scanning = false;
 let lastScanTime = null;
@@ -34,25 +33,33 @@ const WEAPON_CATEGORIES = ['Warrior Weapons', 'Mage Weapons', 'Hunter Weapons'];
 
 document.addEventListener('DOMContentLoaded', () => {
   buildCategoryCheckboxes();
-  document.getElementById('showFavoritesOnly').addEventListener('change', applyFiltersAndRender);
   document.getElementById('multiRouteToggle').addEventListener('change', (e) => {
     document.getElementById('singleRouteControls').style.display = e.target.checked ? 'none' : 'block';
   });
   document.getElementById('premiumTax').addEventListener('change', updateTaxLabel);
   document.getElementById('destCity').addEventListener('change', onDestCityChange);
+  onDestCityChange(); // Apply category filter for default destination
 });
 
 function onDestCityChange() {
   const dest = document.getElementById('destCity').value;
-  if (dest === 'Black Market') {
-    document.querySelectorAll('#categoryGrid input[type="checkbox"]').forEach(cb => {
-      if (cb.dataset.weaponGroup) {
-        cb.checked = true; // Weapons are valid for Black Market
-      } else if (cb.value) {
-        cb.checked = BLACK_MARKET_CATEGORIES.includes(cb.value);
+  const isBlackMarket = dest === 'Black Market';
+  document.querySelectorAll('#categoryGrid input[type="checkbox"]').forEach(cb => {
+    const label = cb.closest('label') || cb.parentElement;
+    if (cb.dataset.weaponGroup) {
+      cb.checked = true;
+      if (label && label.tagName === 'LABEL') label.style.display = '';
+    } else if (cb.value) {
+      const allowed = BLACK_MARKET_CATEGORIES.includes(cb.value);
+      if (isBlackMarket) {
+        cb.checked = allowed;
+        if (label && label.tagName === 'LABEL') label.style.display = allowed ? '' : 'none';
+      } else {
+        if (label && label.tagName === 'LABEL') label.style.display = '';
       }
-    });
-  }
+    }
+  });
+  // Also hide hidden weapon sub-checkboxes (they have no label to hide)
 }
 
 function buildCategoryCheckboxes() {
@@ -559,14 +566,12 @@ function applyFiltersAndRender() {
   const minMargin = parseFloat(document.getElementById('minMargin').value) || 0;
   const tierFilter = document.getElementById('tierFilter').value;
   const enchantFilter = document.getElementById('enchantFilter').value;
-  const showFavsOnly = document.getElementById('showFavoritesOnly').checked;
 
   let filtered = currentResults.filter(flip => {
     if (flip.profit < minProfit) return false;
     if (flip.margin < minMargin) return false;
     if (tierFilter !== 'all' && flip.tier !== parseInt(tierFilter)) return false;
     if (enchantFilter !== 'all' && flip.enchantment !== parseInt(enchantFilter)) return false;
-    if (showFavsOnly && !favorites.has(flip.itemId)) return false;
     const consumeKey = `${flip.itemId}__${flip.quality}__${flip.originCity}__${flip.destCity}`;
     if (consumed.has(consumeKey)) return false;
     return true;
@@ -682,7 +687,6 @@ function buildTable(flips, showRoute) {
     <table>
       <thead>
         <tr>
-          <th></th>
           <th>Item</th>
           <th>${hasEnchantFlips ? 'Type' : 'Quality'}</th>
           ${showRoute ? '<th>Buy In</th><th>Sell In</th>' : ''}
@@ -701,7 +705,6 @@ function buildTable(flips, showRoute) {
   for (const flip of flips) {
     const marginClass = flip.margin >= 20 ? 'margin-high' : flip.margin >= 10 ? 'margin-medium' : 'margin-low';
     const rowClass = flip.margin >= 20 ? 'high-profit' : '';
-    const isFav = favorites.has(flip.itemId);
     const buyAge = getRelativeTime(flip.buyDate);
     const sellAge = getRelativeTime(flip.sellDate);
     const oldestAge = buyAge.includes('day') || sellAge.includes('day') ? 'stale' : '';
@@ -735,11 +738,6 @@ function buildTable(flips, showRoute) {
 
     html += `
       <tr class="${rowClass}">
-        <td>
-          <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${flip.itemId}', this)" title="Toggle favorite">
-            ${isFav ? '&#9733;' : '&#9734;'}
-          </button>
-        </td>
         <td><div class="item-cell"><img class="item-icon" src="${getItemIconUrl(iconItemId)}" alt="" loading="lazy"><span class="item-name">${flip.itemName}</span></div></td>
         <td style="color:var(--text-secondary); font-size:12px;">${typeCol}</td>
         ${showRoute ? `
@@ -761,23 +759,6 @@ function buildTable(flips, showRoute) {
   return html;
 }
 
-// ═══════════════════════════════════════════════════════════
-// FAVORITES
-// ═══════════════════════════════════════════════════════════
-
-function loadFavorites() {
-  try {
-    const stored = localStorage.getItem('albion_flipper_favorites');
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function saveFavorites() {
-  localStorage.setItem('albion_flipper_favorites', JSON.stringify([...favorites]));
-}
-
 function consumeFlip(itemId, quality, origin, dest) {
   const key = `${itemId}__${quality}__${origin}__${dest}`;
   consumed.add(key);
@@ -786,19 +767,6 @@ function consumeFlip(itemId, quality, origin, dest) {
 
 function getItemIconUrl(itemId) {
   return `https://render.albiononline.com/v1/item/${itemId}.png?size=64`;
-}
-
-function toggleFavorite(itemId, btn) {
-  if (favorites.has(itemId)) {
-    favorites.delete(itemId);
-    btn.classList.remove('active');
-    btn.innerHTML = '&#9734;';
-  } else {
-    favorites.add(itemId);
-    btn.classList.add('active');
-    btn.innerHTML = '&#9733;';
-  }
-  saveFavorites();
 }
 
 // ═══════════════════════════════════════════════════════════
