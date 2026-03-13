@@ -38,9 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('multiRouteToggle').addEventListener('change', (e) => {
     document.getElementById('singleRouteControls').style.display = e.target.checked ? 'none' : 'block';
   });
-  document.getElementById('enchantFlipToggle').addEventListener('change', (e) => {
-    document.getElementById('enchantFlipControls').style.display = e.target.checked ? 'block' : 'none';
-  });
   document.getElementById('premiumTax').addEventListener('change', updateTaxLabel);
   document.getElementById('destCity').addEventListener('change', onDestCityChange);
 });
@@ -490,41 +487,42 @@ async function startScan() {
   // ─── ENCHANT FLIPS ───
   const enchantEnabled = document.getElementById('enchantFlipToggle').checked;
   if (enchantEnabled) {
-    const enchantCity = document.getElementById('enchantCity').value;
-    const matCount = parseInt(document.getElementById('enchantMatCount').value) || 48;
-    // Get enchantable base items from selected categories
+    const enchantCities = multiRoute
+      ? CITIES.filter(c => c !== 'Black Market')
+      : [document.getElementById('originCity').value];
+    const matCount = 48;
     const enchantableItems = getEnchantableItems(selectedCategories);
 
     if (enchantableItems.length > 0) {
-      setStatus(`Scanning ${enchantableItems.length} items for enchant upgrades in ${enchantCity}...`);
-      showProgress(true);
-
-      try {
-        // Build list of all enchanted variants + materials to fetch
-        const enchantItemIds = [];
-        const materialIds = new Set();
-        for (const baseId of enchantableItems) {
-          enchantItemIds.push(baseId);
-          enchantItemIds.push(`${baseId}@1`);
-          enchantItemIds.push(`${baseId}@2`);
-          enchantItemIds.push(`${baseId}@3`);
-          const tier = getItemTier(baseId);
-          if (tier >= 4) {
-            materialIds.add(`T${tier}_RUNE`);
-            materialIds.add(`T${tier}_SOUL`);
-            materialIds.add(`T${tier}_RELIC`);
-          }
+      // Build list of all enchanted variants + materials to fetch
+      const enchantItemIds = [];
+      const materialIds = new Set();
+      for (const baseId of enchantableItems) {
+        enchantItemIds.push(baseId);
+        enchantItemIds.push(`${baseId}@1`);
+        enchantItemIds.push(`${baseId}@2`);
+        enchantItemIds.push(`${baseId}@3`);
+        const tier = getItemTier(baseId);
+        if (tier >= 4) {
+          materialIds.add(`T${tier}_RUNE`);
+          materialIds.add(`T${tier}_SOUL`);
+          materialIds.add(`T${tier}_RELIC`);
         }
-        enchantItemIds.push(...materialIds);
+      }
+      enchantItemIds.push(...materialIds);
 
-        const enchantPriceData = await fetchAllPrices(enchantItemIds, [enchantCity], (pct) => {
-          updateProgress(pct);
-        });
-
-        const enchantFlips = calculateEnchantFlips(enchantPriceData, enchantCity, matCount);
-        allFlips.push(...enchantFlips);
-      } catch (err) {
-        console.warn('Enchant flip scan error:', err);
+      for (const enchantCity of enchantCities) {
+        setStatus(`Scanning enchant upgrades in ${enchantCity}...`);
+        showProgress(true);
+        try {
+          const enchantPriceData = await fetchAllPrices(enchantItemIds, [enchantCity], (pct) => {
+            updateProgress(pct);
+          });
+          const enchantFlips = calculateEnchantFlips(enchantPriceData, enchantCity, matCount);
+          allFlips.push(...enchantFlips);
+        } catch (err) {
+          console.warn('Enchant flip scan error:', err);
+        }
       }
     }
   }
