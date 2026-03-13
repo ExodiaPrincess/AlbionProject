@@ -794,7 +794,123 @@
       opacity: 0.5;
     }
 
-    /* (tools menu removed — using left-nav instead) */
+    /* ─── FARMING CALCULATOR ─── */
+    .farm-bonus-info {
+      font-size: 11px;
+      padding: 6px 10px;
+      background: rgba(63, 185, 80, 0.08);
+      border-radius: 4px;
+      margin-bottom: 12px;
+      color: var(--green);
+      display: none;
+    }
+
+    .farm-bonus-info.visible { display: block; }
+
+    .farm-product-info {
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 6px 10px;
+      background: rgba(212, 168, 67, 0.06);
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    .farm-results {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .farm-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .farm-card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .farm-card-title img {
+      width: 36px;
+      height: 36px;
+      image-rendering: pixelated;
+    }
+
+    .farm-stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .farm-stat {
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+    }
+
+    .farm-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+    .farm-stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    .farm-stat-value.positive { color: var(--green); }
+    .farm-stat-value.negative { color: var(--red); }
+    .farm-stat-value.neutral { color: var(--accent); }
+
+    .farm-stat-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .farm-stat.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .farm-bonus-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(63, 185, 80, 0.15);
+      color: var(--green);
+    }
+
+    .farm-breakdown {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .farm-breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 13px;
+    }
+
+    .farm-breakdown-row .label { color: var(--text-secondary); }
+    .farm-breakdown-row .value { font-family: monospace; font-weight: 600; }
 
     /* ─── RESPONSIVE ─── */
     @media (max-width: 900px) {
@@ -864,10 +980,17 @@
       <span class="nav-icon">&#9878;</span>
       Flipper
     </button>
+    <button class="nav-item" onclick="selectTool('farming', this)" title="Farming Calculator">
+      <span class="nav-icon">&#127806;</span>
+      Farming
+    </button>
   </div>
 
   <!-- ─── SIDEBAR ─── -->
   <div class="sidebar">
+
+    <!-- ═══ FLIPPER SIDEBAR ═══ -->
+    <div id="flipperSidebar">
 
     <!-- Route Selection -->
     <div class="panel">
@@ -990,10 +1113,81 @@
       </button>
     </div>
 
+    </div><!-- /flipperSidebar -->
+
+    <!-- ═══ FARMING SIDEBAR ═══ -->
+    <div id="farmingSidebar" style="display:none;">
+
+      <div class="panel">
+        <div class="panel-title">Island</div>
+        <label for="farmCity">City</label>
+        <select id="farmCity">
+          <option value="Fort Sterling">Fort Sterling</option>
+          <option value="Lymhurst">Lymhurst</option>
+          <option value="Bridgewatch">Bridgewatch</option>
+          <option value="Martlock">Martlock</option>
+          <option value="Thetford">Thetford</option>
+        </select>
+        <div class="farm-bonus-info" id="farmBonusInfo"></div>
+
+        <label for="islandLevel">Island Level</label>
+        <select id="islandLevel">
+          <option value="1">Level 1 — 1 plot</option>
+          <option value="2">Level 2 — 2 plots</option>
+          <option value="3">Level 3 — 3 plots</option>
+          <option value="4">Level 4 — 4 plots</option>
+          <option value="5">Level 5 — 5 plots</option>
+          <option value="6" selected>Level 6 — 5 plots</option>
+        </select>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Product</div>
+
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="farmTypeToggle" onchange="onFarmTypeChange()">
+            <span class="toggle-slider"></span>
+          </label>
+          <label for="farmTypeToggle" style="margin-bottom:0; cursor:pointer;" id="farmTypeLabel">Crops</label>
+        </div>
+
+        <label for="farmProduct">Select Product</label>
+        <select id="farmProduct" onchange="onFarmProductChange()"></select>
+
+        <div class="farm-product-info" id="farmProductInfo"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Options</div>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="farmPremium">
+            <span class="toggle-slider"></span>
+          </label>
+          <label for="farmPremium" style="margin-bottom:0; cursor:pointer;">Premium (2x yield)</label>
+        </div>
+
+        <label for="farmPlotCount">Number of plots used</label>
+        <input type="number" id="farmPlotCount" value="5" min="1" max="5">
+        <div class="tax-info">Plots available depend on island level. Max plots shown above.</div>
+      </div>
+
+      <div class="panel">
+        <button class="btn btn-primary" id="farmCalcBtn" onclick="calculateFarming()">
+          Calculate Profit
+        </button>
+      </div>
+
+    </div><!-- /farmingSidebar -->
+
   </div>
 
   <!-- ─── MAIN CONTENT ─── -->
   <div class="content" id="mainContent">
+
+    <!-- ═══ FLIPPER CONTENT ═══ -->
+    <div id="flipperContent">
 
     <!-- Status Bar -->
     <div class="status-bar">
@@ -1026,6 +1220,17 @@
         <div class="icon">&#x1F4B0;</div>
         <h3>Ready to Find Flips</h3>
         <p>Choose your origin and destination cities, select item categories, then scan the market.</p>
+      </div>
+    </div>
+
+    </div><!-- /flipperContent -->
+
+    <!-- ═══ FARMING CONTENT ═══ -->
+    <div id="farmingContent" style="display:none;">
+      <div class="empty-state">
+        <div class="icon">&#127806;</div>
+        <h3>Farming Profit Calculator</h3>
+        <p>Select your city, island level, and product, then calculate your expected farming profit.</p>
       </div>
     </div>
 

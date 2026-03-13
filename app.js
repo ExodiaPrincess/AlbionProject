@@ -39,6 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('premiumTax').addEventListener('change', updateTaxLabel);
   document.getElementById('destCity').addEventListener('change', onDestCityChange);
   onDestCityChange(); // Apply category filter for default destination
+
+  // Initialize farming sidebar
+  populateFarmProducts();
+  document.getElementById('farmCity').addEventListener('change', updateFarmBonusInfo);
 });
 
 function onDestCityChange() {
@@ -774,12 +778,383 @@ function getItemIconUrl(itemId) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// FARMING CALCULATOR
+// ═══════════════════════════════════════════════════════════
+
+const FARM_PLOTS = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 5 };
+const SEEDS_PER_PLOT = 9;
+
+const FARM_CROPS = [
+  { tier: 1, name: 'Carrot',  seedId: 'T1_FARM_CARROT_SEED',  productId: 'T1_CARROT' },
+  { tier: 2, name: 'Bean',    seedId: 'T2_FARM_BEAN_SEED',    productId: 'T2_BEAN' },
+  { tier: 3, name: 'Wheat',   seedId: 'T3_FARM_WHEAT_SEED',   productId: 'T3_WHEAT' },
+  { tier: 4, name: 'Turnip',  seedId: 'T4_FARM_TURNIP_SEED',  productId: 'T4_TURNIP' },
+  { tier: 5, name: 'Cabbage', seedId: 'T5_FARM_CABBAGE_SEED', productId: 'T5_CABBAGE' },
+  { tier: 6, name: 'Potato',  seedId: 'T6_FARM_POTATO_SEED',  productId: 'T6_POTATO' },
+  { tier: 7, name: 'Corn',    seedId: 'T7_FARM_CORN_SEED',    productId: 'T7_CORN' },
+  { tier: 8, name: 'Pumpkin', seedId: 'T8_FARM_PUMPKIN_SEED', productId: 'T8_PUMPKIN' }
+];
+
+const FARM_ANIMALS = [
+  { tier: 3, name: 'Chicken', babyId: 'T3_FARM_CHICKEN_BABY', grownId: 'T3_FARM_CHICKEN_GROWN', productId: 'T3_EGG',  productName: 'Egg',        growthHours: 22 },
+  { tier: 4, name: 'Goat',    babyId: 'T4_FARM_GOAT_BABY',    grownId: 'T4_FARM_GOAT_GROWN',    productId: 'T4_MILK', productName: 'Goat Milk',  growthHours: 44 },
+  { tier: 5, name: 'Goose',   babyId: 'T5_FARM_GOOSE_BABY',   grownId: 'T5_FARM_GOOSE_GROWN',   productId: 'T5_EGG',  productName: 'Goose Egg',  growthHours: 66 },
+  { tier: 6, name: 'Sheep',   babyId: 'T6_FARM_SHEEP_BABY',   grownId: 'T6_FARM_SHEEP_GROWN',   productId: 'T6_MILK', productName: 'Sheep Milk', growthHours: 88 },
+  { tier: 7, name: 'Pig',     babyId: 'T7_FARM_PIG_BABY',     grownId: 'T7_FARM_PIG_GROWN',     productId: null,      productName: null,         growthHours: 110 },
+  { tier: 8, name: 'Cow',     babyId: 'T8_FARM_COW_BABY',     grownId: 'T8_FARM_COW_GROWN',     productId: 'T8_MILK', productName: 'Cow Milk',   growthHours: 132 }
+];
+
+const CITY_FARM_BONUSES = {
+  'Fort Sterling': { crop: 'Turnip',  animal: 'Chicken' },
+  'Lymhurst':      { crop: 'Carrot',  animal: 'Goose' },
+  'Bridgewatch':   { crop: 'Bean',    animal: 'Goat' },
+  'Martlock':      { crop: 'Wheat',   animal: 'Cow' },
+  'Thetford':      { crop: 'Cabbage', animal: 'Pig' }
+};
+
+function onFarmTypeChange() {
+  const isAnimal = document.getElementById('farmTypeToggle').checked;
+  document.getElementById('farmTypeLabel').textContent = isAnimal ? 'Animals (Pastures)' : 'Crops (Farms)';
+  populateFarmProducts();
+}
+
+function populateFarmProducts() {
+  const isAnimal = document.getElementById('farmTypeToggle').checked;
+  const select = document.getElementById('farmProduct');
+  const items = isAnimal ? FARM_ANIMALS : FARM_CROPS;
+
+  select.innerHTML = items.map(item =>
+    `<option value="${item.name}">T${item.tier} ${item.name}</option>`
+  ).join('');
+
+  onFarmProductChange();
+  updateFarmBonusInfo();
+}
+
+function onFarmProductChange() {
+  const isAnimal = document.getElementById('farmTypeToggle').checked;
+  const productName = document.getElementById('farmProduct').value;
+  const info = document.getElementById('farmProductInfo');
+
+  if (isAnimal) {
+    const animal = FARM_ANIMALS.find(a => a.name === productName);
+    if (animal) {
+      const products = animal.productName ? `Produces: ${animal.productName} (7-11 per animal)` : 'Butcher only (no secondary products)';
+      const days = Math.floor(animal.growthHours / 24);
+      const hours = animal.growthHours % 24;
+      const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
+      info.innerHTML = `${SEEDS_PER_PLOT} babies per pasture &middot; ${timeStr} growth<br>${products}`;
+    }
+  } else {
+    const crop = FARM_CROPS.find(c => c.name === productName);
+    if (crop) {
+      info.innerHTML = `${SEEDS_PER_PLOT} seeds per plot &middot; 22h growth<br>Yield: 3-6 per seed (avg 4.5) &middot; 2x with Premium`;
+    }
+  }
+
+  updateFarmBonusInfo();
+}
+
+function updateFarmBonusInfo() {
+  const city = document.getElementById('farmCity').value;
+  const isAnimal = document.getElementById('farmTypeToggle').checked;
+  const productName = document.getElementById('farmProduct').value;
+  const bonusInfo = document.getElementById('farmBonusInfo');
+  const cityBonus = CITY_FARM_BONUSES[city];
+
+  if (!cityBonus) {
+    bonusInfo.classList.remove('visible');
+    return;
+  }
+
+  const bonusTarget = isAnimal ? cityBonus.animal : cityBonus.crop;
+  if (bonusTarget === productName) {
+    bonusInfo.innerHTML = `&#10003; ${city} gives <strong>+10% yield bonus</strong> for ${productName}!`;
+    bonusInfo.classList.add('visible');
+  } else {
+    bonusInfo.innerHTML = `${city} bonus: ${isAnimal ? cityBonus.animal : cityBonus.crop} (${isAnimal ? 'animal' : 'crop'})`;
+    bonusInfo.classList.add('visible');
+  }
+}
+
+async function calculateFarming() {
+  const city = document.getElementById('farmCity').value;
+  const islandLevel = parseInt(document.getElementById('islandLevel').value);
+  const isAnimal = document.getElementById('farmTypeToggle').checked;
+  const productName = document.getElementById('farmProduct').value;
+  const premium = document.getElementById('farmPremium').checked;
+  const plotCount = Math.min(parseInt(document.getElementById('farmPlotCount').value) || 1, FARM_PLOTS[islandLevel]);
+
+  const btn = document.getElementById('farmCalcBtn');
+  btn.disabled = true;
+  btn.textContent = 'Fetching prices...';
+
+  const container = document.getElementById('farmingContent');
+
+  try {
+    if (isAnimal) {
+      const animal = FARM_ANIMALS.find(a => a.name === productName);
+      if (!animal) throw new Error('Animal not found');
+
+      // Fetch baby price + grown price + product price
+      const itemsToFetch = [animal.babyId, animal.grownId];
+      if (animal.productId) itemsToFetch.push(animal.productId);
+
+      const priceData = await fetchPricesBatch(itemsToFetch, [city]);
+
+      const priceMap = {};
+      for (const entry of priceData) {
+        if (entry.city === city && entry.quality === 1) {
+          priceMap[entry.item_id] = entry;
+        }
+      }
+
+      const babyPrice = priceMap[animal.babyId]?.sell_price_min || 0;
+      const grownPrice = priceMap[animal.grownId]?.sell_price_min || 0;
+      const productPrice = animal.productId ? (priceMap[animal.productId]?.sell_price_min || 0) : 0;
+
+      const babiesPerCycle = plotCount * SEEDS_PER_PLOT;
+      const avgProductYield = premium ? 18 : 9; // 7-11 avg ~9, doubled with premium
+      const cityBonus = CITY_FARM_BONUSES[city];
+      const hasBonus = cityBonus && cityBonus.animal === productName;
+      const bonusMultiplier = hasBonus ? 1.10 : 1.0;
+
+      const totalBabyCost = babiesPerCycle * babyPrice;
+      const totalGrownRevenue = babiesPerCycle * grownPrice;
+      const totalProductRevenue = animal.productId ? Math.floor(babiesPerCycle * avgProductYield * bonusMultiplier) * productPrice : 0;
+      const totalRevenue = totalGrownRevenue + totalProductRevenue;
+      const profit = totalRevenue - totalBabyCost;
+      const growthHours = premium ? animal.growthHours / 2 : animal.growthHours;
+      const dailyCycles = 24 / growthHours;
+      const dailyProfit = Math.floor(profit * dailyCycles);
+
+      renderFarmingResults({
+        isAnimal: true,
+        animal,
+        city,
+        plotCount,
+        premium,
+        hasBonus,
+        babiesPerCycle,
+        babyPrice,
+        grownPrice,
+        productPrice,
+        avgProductYield: Math.floor(avgProductYield * bonusMultiplier),
+        totalBabyCost,
+        totalGrownRevenue,
+        totalProductRevenue,
+        totalRevenue,
+        profit,
+        growthHours,
+        dailyProfit
+      });
+    } else {
+      const crop = FARM_CROPS.find(c => c.name === productName);
+      if (!crop) throw new Error('Crop not found');
+
+      const priceData = await fetchPricesBatch([crop.seedId, crop.productId], [city]);
+
+      const priceMap = {};
+      for (const entry of priceData) {
+        if (entry.city === city && entry.quality === 1) {
+          priceMap[entry.item_id] = entry;
+        }
+      }
+
+      const seedPrice = priceMap[crop.seedId]?.sell_price_min || 0;
+      const productPrice = priceMap[crop.productId]?.sell_price_min || 0;
+
+      const seedsPerCycle = plotCount * SEEDS_PER_PLOT;
+      const avgYieldPerSeed = premium ? 9 : 4.5;
+      const cityBonus = CITY_FARM_BONUSES[city];
+      const hasBonus = cityBonus && cityBonus.crop === productName;
+      const bonusMultiplier = hasBonus ? 1.10 : 1.0;
+      const totalProduct = Math.floor(seedsPerCycle * avgYieldPerSeed * bonusMultiplier);
+
+      const totalSeedCost = seedsPerCycle * seedPrice;
+      const totalRevenue = totalProduct * productPrice;
+      const profit = totalRevenue - totalSeedCost;
+      const dailyCycles = 24 / 22; // ~1.09 cycles per day
+      const dailyProfit = Math.floor(profit * dailyCycles);
+
+      renderFarmingResults({
+        isAnimal: false,
+        crop,
+        city,
+        plotCount,
+        premium,
+        hasBonus,
+        seedsPerCycle,
+        seedPrice,
+        productPrice,
+        avgYieldPerSeed,
+        totalProduct,
+        totalSeedCost,
+        totalRevenue,
+        profit,
+        dailyProfit
+      });
+    }
+  } catch (err) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">&#9888;</div>
+        <h3>Error</h3>
+        <p>${err.message}</p>
+      </div>
+    `;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Calculate Profit';
+}
+
+function renderFarmingResults(data) {
+  const container = document.getElementById('farmingContent');
+
+  if (data.isAnimal) {
+    const animal = data.animal;
+    const iconUrl = getItemIconUrl(animal.babyId);
+    const grownIconUrl = getItemIconUrl(animal.grownId);
+    const productIconUrl = animal.productId ? getItemIconUrl(animal.productId) : '';
+
+    container.innerHTML = `
+      <div class="farm-results">
+        <div class="farm-card">
+          <div class="farm-card-title">
+            <img src="${iconUrl}" alt="${animal.name}">
+            T${animal.tier} ${animal.name} Farm — ${data.city}
+            ${data.hasBonus ? '<span class="farm-bonus-badge">+10% City Bonus</span>' : ''}
+          </div>
+          <div class="farm-stat-grid">
+            <div class="farm-stat">
+              <div class="farm-stat-label">Babies Needed</div>
+              <div class="farm-stat-value neutral">${data.babiesPerCycle}</div>
+              <div class="farm-stat-sub">${data.plotCount} pasture${data.plotCount > 1 ? 's' : ''} &times; ${SEEDS_PER_PLOT} per pasture</div>
+            </div>
+            <div class="farm-stat">
+              <div class="farm-stat-label">Growth Time</div>
+              <div class="farm-stat-value neutral">${data.growthHours}h</div>
+              <div class="farm-stat-sub">${data.premium ? 'Premium (halved)' : 'Standard'}</div>
+            </div>
+            <div class="farm-stat">
+              <div class="farm-stat-label">Baby Price</div>
+              <div class="farm-stat-value neutral">${formatSilver(data.babyPrice)}</div>
+              <div class="farm-stat-sub">per baby animal</div>
+            </div>
+            <div class="farm-stat">
+              <div class="farm-stat-label">Grown Price</div>
+              <div class="farm-stat-value neutral">${formatSilver(data.grownPrice)}</div>
+              <div class="farm-stat-sub">sell grown animal</div>
+            </div>
+            ${animal.productId ? `
+            <div class="farm-stat">
+              <div class="farm-stat-label">${animal.productName} Price</div>
+              <div class="farm-stat-value neutral">${formatSilver(data.productPrice)}</div>
+              <div class="farm-stat-sub">~${data.avgProductYield} per animal${data.hasBonus ? ' (with bonus)' : ''}</div>
+            </div>
+            ` : ''}
+            <div class="farm-stat full-width">
+              <div class="farm-stat-label">Profit per Cycle</div>
+              <div class="farm-stat-value ${data.profit >= 0 ? 'positive' : 'negative'}">${data.profit >= 0 ? '+' : ''}${formatSilver(data.profit)}</div>
+              <div class="farm-stat-sub">Est. daily: ${data.dailyProfit >= 0 ? '+' : ''}${formatSilver(data.dailyProfit)}</div>
+            </div>
+          </div>
+          <div class="farm-breakdown">
+            <div class="farm-breakdown-row"><span class="label">Total baby cost</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalBabyCost)}</span></div>
+            <div class="farm-breakdown-row"><span class="label">Grown animal revenue</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalGrownRevenue)}</span></div>
+            ${animal.productId ? `<div class="farm-breakdown-row"><span class="label">${animal.productName} revenue</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalProductRevenue)}</span></div>` : ''}
+            <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
+              <span class="label" style="font-weight:700; color:var(--text-primary);">Net Profit</span>
+              <span class="value" style="color:${data.profit >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:16px;">${data.profit >= 0 ? '+' : ''}${formatSilver(data.profit)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    const crop = data.crop;
+    const seedIconUrl = getItemIconUrl(crop.seedId);
+    const productIconUrl = getItemIconUrl(crop.productId);
+
+    container.innerHTML = `
+      <div class="farm-results">
+        <div class="farm-card">
+          <div class="farm-card-title">
+            <img src="${productIconUrl}" alt="${crop.name}">
+            T${crop.tier} ${crop.name} Farm — ${data.city}
+            ${data.hasBonus ? '<span class="farm-bonus-badge">+10% City Bonus</span>' : ''}
+          </div>
+          <div class="farm-stat-grid">
+            <div class="farm-stat">
+              <div class="farm-stat-label">Seeds Needed</div>
+              <div class="farm-stat-value neutral">${data.seedsPerCycle}</div>
+              <div class="farm-stat-sub">${data.plotCount} plot${data.plotCount > 1 ? 's' : ''} &times; ${SEEDS_PER_PLOT} per plot</div>
+            </div>
+            <div class="farm-stat">
+              <div class="farm-stat-label">Avg Yield / Seed</div>
+              <div class="farm-stat-value neutral">${data.avgYieldPerSeed}</div>
+              <div class="farm-stat-sub">${data.premium ? 'Premium (2x)' : 'Standard'}${data.hasBonus ? ' +10% bonus' : ''}</div>
+            </div>
+            <div class="farm-stat">
+              <div class="farm-stat-label">Seed Price</div>
+              <div class="farm-stat-value neutral">${formatSilver(data.seedPrice)}</div>
+              <div class="farm-stat-sub">per seed</div>
+            </div>
+            <div class="farm-stat">
+              <div class="farm-stat-label">${crop.name} Price</div>
+              <div class="farm-stat-value neutral">${formatSilver(data.productPrice)}</div>
+              <div class="farm-stat-sub">per unit (sell order)</div>
+            </div>
+            <div class="farm-stat">
+              <div class="farm-stat-label">Total Harvest</div>
+              <div class="farm-stat-value neutral">${data.totalProduct}</div>
+              <div class="farm-stat-sub">${data.seedsPerCycle} seeds &times; ${data.avgYieldPerSeed} avg</div>
+            </div>
+            <div class="farm-stat full-width">
+              <div class="farm-stat-label">Profit per Cycle (22h)</div>
+              <div class="farm-stat-value ${data.profit >= 0 ? 'positive' : 'negative'}">${data.profit >= 0 ? '+' : ''}${formatSilver(data.profit)}</div>
+              <div class="farm-stat-sub">Est. daily: ${data.dailyProfit >= 0 ? '+' : ''}${formatSilver(data.dailyProfit)}</div>
+            </div>
+          </div>
+          <div class="farm-breakdown">
+            <div class="farm-breakdown-row"><span class="label">Total seed cost (${data.seedsPerCycle} &times; ${formatSilver(data.seedPrice)})</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalSeedCost)}</span></div>
+            <div class="farm-breakdown-row"><span class="label">Crop revenue (${data.totalProduct} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalRevenue)}</span></div>
+            <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
+              <span class="label" style="font-weight:700; color:var(--text-primary);">Net Profit</span>
+              <span class="value" style="color:${data.profit >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:16px;">${data.profit >= 0 ? '+' : ''}${formatSilver(data.profit)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════
+
+let currentTool = 'flipper';
 
 function selectTool(tool, el) {
   document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+
+  currentTool = tool;
+
+  // Toggle sidebar panels
+  document.getElementById('flipperSidebar').style.display = tool === 'flipper' ? '' : 'none';
+  document.getElementById('farmingSidebar').style.display = tool === 'farming' ? '' : 'none';
+
+  // Toggle content panels
+  document.getElementById('flipperContent').style.display = tool === 'flipper' ? '' : 'none';
+  document.getElementById('farmingContent').style.display = tool === 'farming' ? '' : 'none';
+
+  // Initialize farming sidebar on first switch
+  if (tool === 'farming' && !document.getElementById('farmProduct').options.length) {
+    populateFarmProducts();
+  }
 }
 
 function toggleSettings() {
