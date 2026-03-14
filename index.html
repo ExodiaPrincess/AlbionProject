@@ -912,6 +912,49 @@
     .farm-breakdown-row .label { color: var(--text-secondary); }
     .farm-breakdown-row .value { font-family: monospace; font-weight: 600; }
 
+    .farm-profit-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+    .farm-profit-table thead th {
+      text-align: right;
+      padding: 8px 12px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .farm-profit-table thead th:first-child { text-align: left; }
+    .farm-profit-table tbody td {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .farm-profit-label {
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .farm-profit-val {
+      text-align: right;
+      font-family: monospace;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .farm-profit-highlight td {
+      border-top: 1px solid var(--accent);
+      background: rgba(218,165,32,0.06);
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    .farm-profit-highlight .farm-profit-label {
+      color: var(--accent);
+      font-size: 14px;
+    }
+
     /* ─── RESPONSIVE ─── */
     @media (max-width: 900px) {
       .app { flex-direction: column; }

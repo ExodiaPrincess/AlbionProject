@@ -1225,26 +1225,31 @@ function renderFarmingResults(data) {
             <div class="farm-breakdown-row"><span class="label">Seed cost (${data.seedsPerCycle} &times; ${formatSilver(data.seedPrice)} NPC, -${data.seedsReturned} returned)</span><span class="value" style="color:var(--red);">-${formatSilver(data.effectiveSeedCost)}</span></div>
             <div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Seed return: ${data.seedsReturned}/${data.seedsPerCycle} (${Math.round(data.seedReturnRate * 100)}%)</span><span class="value" style="color:var(--blue);">saves ${formatSilver(data.seedsReturned * data.seedPrice)}</span></div>
             <div class="farm-breakdown-row"><span class="label">${data.farmType === 'herbs' ? 'Herb' : 'Crop'} revenue (avg ${data.totalProductAvg} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.revenueAvg)}</span></div>
-            <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
-              <span class="label" style="font-weight:700; color:var(--red);">Min Profit per Cycle</span>
-              <span class="value" style="color:${data.profitMin >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:15px;">${data.profitMin >= 0 ? '+' : ''}${formatSilver(data.profitMin)}</span>
-            </div>
-            <div class="farm-breakdown-row">
-              <span class="label" style="font-weight:700; color:var(--text-primary);">Avg Profit per Cycle</span>
-              <span class="value" style="color:${data.profitAvg >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:15px;">${data.profitAvg >= 0 ? '+' : ''}${formatSilver(data.profitAvg)}</span>
-            </div>
-            <div class="farm-breakdown-row">
-              <span class="label" style="font-weight:700; color:var(--green);">Max Profit per Cycle</span>
-              <span class="value" style="color:${data.profitMax >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:15px;">${data.profitMax >= 0 ? '+' : ''}${formatSilver(data.profitMax)}</span>
-            </div>
-            <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
-              <span class="label" style="font-weight:700; color:var(--text-primary);">Daily Profit (min / avg / max)</span>
-              <span class="value" style="font-size:14px;">${formatSilver(data.dailyProfitMin)} / <span style="color:${data.dailyProfitAvg >= 0 ? 'var(--green)' : 'var(--red)'}">${formatSilver(data.dailyProfitAvg)}</span> / ${formatSilver(data.dailyProfitMax)}</span>
-            </div>
-            <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
-              <span class="label" style="font-weight:700; color:var(--accent); font-size:15px;">Monthly Profit (30d)</span>
-              <span class="value" style="font-size:14px;">${formatSilver(data.monthlyProfitMin)} / <span style="color:${data.monthlyProfitAvg >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:18px; font-weight:700;">${formatSilver(data.monthlyProfitAvg)}</span> / ${formatSilver(data.monthlyProfitMax)}</span>
-            </div>
+            <table class="farm-profit-table">
+              <thead>
+                <tr><th></th><th>Min</th><th>Average</th><th>Max</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="farm-profit-label">Per Cycle (${data.growthHours}h)</td>
+                  <td class="farm-profit-val" style="color:${data.profitMin >= 0 ? 'var(--green)' : 'var(--red)'}">${data.profitMin >= 0 ? '+' : ''}${formatSilver(data.profitMin)}</td>
+                  <td class="farm-profit-val" style="color:${data.profitAvg >= 0 ? 'var(--green)' : 'var(--red)'}">${data.profitAvg >= 0 ? '+' : ''}${formatSilver(data.profitAvg)}</td>
+                  <td class="farm-profit-val" style="color:${data.profitMax >= 0 ? 'var(--green)' : 'var(--red)'}">${data.profitMax >= 0 ? '+' : ''}${formatSilver(data.profitMax)}</td>
+                </tr>
+                <tr>
+                  <td class="farm-profit-label">Daily (~${data.cyclesPerDay.toFixed(1)} cycles)</td>
+                  <td class="farm-profit-val" style="color:${data.dailyProfitMin >= 0 ? 'var(--green)' : 'var(--red)'}">${data.dailyProfitMin >= 0 ? '+' : ''}${formatSilver(data.dailyProfitMin)}</td>
+                  <td class="farm-profit-val" style="color:${data.dailyProfitAvg >= 0 ? 'var(--green)' : 'var(--red)'}">${data.dailyProfitAvg >= 0 ? '+' : ''}${formatSilver(data.dailyProfitAvg)}</td>
+                  <td class="farm-profit-val" style="color:${data.dailyProfitMax >= 0 ? 'var(--green)' : 'var(--red)'}">${data.dailyProfitMax >= 0 ? '+' : ''}${formatSilver(data.dailyProfitMax)}</td>
+                </tr>
+                <tr class="farm-profit-highlight">
+                  <td class="farm-profit-label">Monthly (30d)</td>
+                  <td class="farm-profit-val" style="color:${data.monthlyProfitMin >= 0 ? 'var(--green)' : 'var(--red)'}">${data.monthlyProfitMin >= 0 ? '+' : ''}${formatSilver(data.monthlyProfitMin)}</td>
+                  <td class="farm-profit-val" style="color:${data.monthlyProfitAvg >= 0 ? 'var(--green)' : 'var(--red)'}; font-weight:700; font-size:16px;">${data.monthlyProfitAvg >= 0 ? '+' : ''}${formatSilver(data.monthlyProfitAvg)}</td>
+                  <td class="farm-profit-val" style="color:${data.monthlyProfitMax >= 0 ? 'var(--green)' : 'var(--red)'}">${data.monthlyProfitMax >= 0 ? '+' : ''}${formatSilver(data.monthlyProfitMax)}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
