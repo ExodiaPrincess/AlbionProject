@@ -466,6 +466,22 @@ function getEnchantMaterialId(tier, level) {
   return `T${tier}_${types[level]}`;
 }
 
+// Get enchanting material count based on item slot
+// 96: head, boots, off-hand, capes  |  192: chest, bags  |  288: 1H weapons  |  384: 2H weapons
+function getEnchantMatCount(itemId) {
+  const base = getBaseItemId(itemId);
+  const stripped = base.replace(/^T\d_/, ''); // remove tier prefix
+  if (stripped.startsWith('2H_')) return 384;
+  if (stripped.startsWith('MAIN_') || stripped.startsWith('MH_')) return 288;
+  if (stripped.startsWith('ARMOR_')) return 192;
+  if (stripped.startsWith('BAG')) return 192;
+  if (stripped.startsWith('HEAD_')) return 96;
+  if (stripped.startsWith('SHOES_')) return 96;
+  if (stripped.startsWith('OFF_')) return 96;
+  if (stripped.startsWith('CAPEITEM')) return 96;
+  return 96; // default fallback
+}
+
 // Get enchantable items from selected categories (base items only, no @N variants)
 function getEnchantableItems(categories) {
   const items = [];

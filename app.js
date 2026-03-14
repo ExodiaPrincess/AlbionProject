@@ -289,7 +289,7 @@ function calculateFlips(priceData, originCity, destCity) {
 // ENCHANT FLIP CALCULATION
 // ═══════════════════════════════════════════════════════════
 
-function calculateEnchantFlips(priceData, buyCity, sellCity, matCount) {
+function calculateEnchantFlips(priceData, buyCity, sellCity) {
   // Build price lookups per city
   const buyPriceMap = {};
   const sellPriceMap = {};
@@ -347,15 +347,16 @@ function calculateEnchantFlips(priceData, buyCity, sellCity, matCount) {
       const buyPrice = fromData.sell_price_min;
       if (!buyPrice || buyPrice <= 0) continue;
 
-      // Calculate material costs
+      // Calculate material costs (count depends on item slot)
+      const itemMatCount = getEnchantMatCount(baseId);
       let materialCost = 0;
       const matDetails = [];
       for (const mat of path.mats) {
         const matPrice = matPrices[tier][mat];
         if (!matPrice || matPrice <= 0) continue;
-        const cost = matCount * matPrice;
+        const cost = itemMatCount * matPrice;
         materialCost += cost;
-        matDetails.push({ type: mat, count: matCount, unitPrice: matPrice, totalCost: cost });
+        matDetails.push({ type: mat, count: itemMatCount, unitPrice: matPrice, totalCost: cost });
       }
 
       // Sell price: only use buy orders (instant sell) — sell order prices are unreliable
@@ -492,7 +493,6 @@ async function startScan() {
     const enchantCities = multiRoute
       ? CITIES.filter(c => c !== 'Black Market')
       : [document.getElementById('originCity').value];
-    const matCount = 48;
     const enchantableItems = getEnchantableItems(selectedCategories);
 
     if (enchantableItems.length > 0) {
@@ -521,7 +521,7 @@ async function startScan() {
             const enchantPriceData = await fetchAllPrices(enchantItemIds, [enchantCity], (pct) => {
               updateProgress(pct);
             });
-            const enchantFlips = calculateEnchantFlips(enchantPriceData, enchantCity, enchantCity, matCount);
+            const enchantFlips = calculateEnchantFlips(enchantPriceData, enchantCity, enchantCity);
             allFlips.push(...enchantFlips);
           } catch (err) {
             console.warn('Enchant flip scan error:', err);
@@ -537,7 +537,7 @@ async function startScan() {
           const enchantPriceData = await fetchAllPrices(enchantItemIds, fetchCities, (pct) => {
             updateProgress(pct);
           });
-          const enchantFlips = calculateEnchantFlips(enchantPriceData, buyCity, sellCity, matCount);
+          const enchantFlips = calculateEnchantFlips(enchantPriceData, buyCity, sellCity);
           allFlips.push(...enchantFlips);
         } catch (err) {
           console.warn('Enchant flip scan error:', err);
