@@ -1050,10 +1050,8 @@ async function calculateFarming() {
       const profitMin = revenueMin - effectiveSeedCost + seedGainRevenue;
       const profitAvg = revenueAvg - effectiveSeedCost + seedGainRevenue;
       const profitMax = revenueMax - effectiveSeedCost + seedGainRevenue;
-      // Base crop/herb cycle: 44h. Focus halves to 22h, Premium halves growth speed too
-      let growthHours = 44;
-      if (useFocus) growthHours /= 2;
-      if (premium) growthHours /= 2;
+      // Base crop/herb cycle: 44h standard, 22h with premium
+      const growthHours = premium ? 22 : 44;
       const cyclesPerDay = 24 / growthHours;
       const dailyProfitMin = Math.floor(profitMin * cyclesPerDay);
       const dailyProfitAvg = Math.floor(profitAvg * cyclesPerDay);
