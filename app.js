@@ -1023,8 +1023,9 @@ async function calculateFarming() {
       const productPrice = priceMap[item.productId]?.sell_price_min || 0;
 
       const baseReturnRate = (SEED_RETURN_RATE[item.tier] || 0) / 100;
-      const focusBonusRate = useFocus ? (FOCUS_SEED_BONUS[item.tier] || 0) / 100 : 0;
-      const totalReturnRate = baseReturnRate + focusBonusRate;
+      const focusBonusPct = useFocus ? (FOCUS_SEED_BONUS[item.tier] || 0) : 0;
+      // Focus INCREASES the base return BY this %, e.g. 60% base + 80% increase = 60% * 1.80 = 108%
+      const totalReturnRate = useFocus ? baseReturnRate * (1 + focusBonusPct / 100) : baseReturnRate;
 
       const seedsPerCycle = plotCount * SEEDS_PER_PLOT;
       const minYieldPerSeed = 6;
@@ -1068,7 +1069,7 @@ async function calculateFarming() {
         plotCount,
         premium,
         useFocus,
-        focusBonusRate: useFocus ? FOCUS_SEED_BONUS[item.tier] : 0,
+        focusBonusPct: useFocus ? FOCUS_SEED_BONUS[item.tier] : 0,
         hasBonus,
         baseReturnRate,
         totalReturnRate,
@@ -1239,7 +1240,7 @@ function renderFarmingResults(data) {
           </div>
           <div class="farm-breakdown">
             <div class="farm-breakdown-row"><span class="label">Seed cost (${data.seedsPerCycle} &times; ${formatSilver(data.seedPrice)} NPC)</span><span class="value" style="color:var(--red);">-${formatSilver(data.seedsPerCycle * data.seedPrice)}</span></div>
-            <div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Seed return: ${data.seedsReturned}/${data.seedsPerCycle} (${Math.round(data.totalReturnRate * 100)}%${data.useFocus ? ` incl. +${data.focusBonusRate}% focus` : ''})</span><span class="value" style="color:var(--blue);">+${formatSilver(data.seedsReturned * data.seedPrice)}</span></div>
+            <div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Seed return: ${data.seedsReturned}/${data.seedsPerCycle} (${Math.round(data.baseReturnRate * 100)}% base${data.useFocus ? ` × ${(1 + data.focusBonusPct / 100).toFixed(2)} focus = ${Math.round(data.totalReturnRate * 100)}%` : ''})</span><span class="value" style="color:var(--blue);">+${formatSilver(data.seedsReturned * data.seedPrice)}</span></div>
             ${data.seedsGained > 0 ? `<div class="farm-breakdown-row"><span class="label" style="color:var(--green);">Extra seeds gained: +${data.seedsGained} (sellable)</span><span class="value" style="color:var(--green);">+${formatSilver(data.seedGainRevenue)}</span></div>` : ''}
             <div class="farm-breakdown-row"><span class="label">Net seed cost</span><span class="value" style="color:${data.effectiveSeedCost > 0 ? 'var(--red)' : 'var(--green)'};">${data.effectiveSeedCost > 0 ? '-' : '+'}${formatSilver(data.effectiveSeedCost)}</span></div>
             <div class="farm-breakdown-row"><span class="label">${data.farmType === 'herbs' ? 'Herb' : 'Crop'} revenue (avg ${data.totalProductAvg} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.revenueAvg)}</span></div>
