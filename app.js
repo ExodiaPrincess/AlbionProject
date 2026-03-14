@@ -786,13 +786,19 @@ const SEEDS_PER_PLOT = 9;
 
 // NPC merchant seed/baby prices (fixed costs from farming merchant)
 const NPC_SEED_COST = { 1: 2312, 2: 3468, 3: 5780, 4: 8670, 5: 11560, 6: 17340, 7: 26010, 8: 34680 };
-const NPC_BABY_COST = { 3: 5780, 4: 8670, 5: 11560, 6: 17340, 7: 26010, 8: 34680 };
+const NPC_BABY_COST = { 3: 5000, 4: 7500, 5: 10000, 6: 15000, 7: 22500, 8: 30000 };
 
 // Base seed return rates per tier (% of seeds returned on harvest)
 const SEED_RETURN_RATE = { 1: 0, 2: 33.33, 3: 60, 4: 73.33, 5: 80, 6: 86.67, 7: 91.11, 8: 93.33 };
 
-// Additional seed yield % per tier (always applied on top of base return)
-const SEED_YIELD_BONUS = { 1: 200, 2: 133, 3: 80, 4: 53, 5: 40, 6: 27, 7: 18, 8: 13 };
+// Focus bonus for seed return (added to base when using focus)
+const SEED_FOCUS_BONUS = { 1: 200, 2: 133, 3: 80, 4: 53, 5: 40, 6: 27, 7: 18, 8: 13 };
+
+// Base offspring return rates per tier (% of babies returned after growth)
+const OFFSPRING_RETURN_RATE = { 3: 60, 4: 73.33, 5: 80, 6: 86.67, 7: 91.11, 8: 93.33 };
+
+// Focus bonus for offspring return (added to base when using focus)
+const OFFSPRING_FOCUS_BONUS = { 3: 80, 4: 53.33, 5: 40, 6: 26.67, 7: 17.78, 8: 13.33 };
 
 // Animal feeding: 9 crops if favorite food, 18 if not
 const FEED_AMOUNT_FAVORITE = 9;
@@ -871,7 +877,9 @@ function onFarmProductChange() {
     const animal = FARM_ANIMALS.find(a => a.name === productName);
     if (animal) {
       const products = animal.productName ? `Produces: ${animal.productName} (7-11 per animal)` : 'Butcher only (no secondary products)';
-      info.innerHTML = `${SEEDS_PER_PLOT} babies per pasture &middot; 44h growth (22h premium)<br>${products}<br>Butchers into: ${animal.meatName} (18 per animal)<br>Favorite food: ${animal.favFood} (${FEED_AMOUNT_FAVORITE}/animal, or ${FEED_AMOUNT_NORMAL} other crop)`;
+      const offBase = OFFSPRING_RETURN_RATE[animal.tier] || 0;
+      const offFocus = OFFSPRING_FOCUS_BONUS[animal.tier] || 0;
+      info.innerHTML = `${SEEDS_PER_PLOT} babies per pasture &middot; 44h growth (22h premium)<br>${products}<br>Butchers into: ${animal.meatName} (18 per animal)<br>Favorite food: ${animal.favFood} (${FEED_AMOUNT_FAVORITE}/animal, or ${FEED_AMOUNT_NORMAL} other crop)<br>Offspring return: ${offBase}% base (+${offFocus}% with focus)`;
     }
   } else if (farmType === 'herbs') {
     const herb = FARM_HERBS.find(h => h.name === productName);
@@ -966,8 +974,15 @@ async function calculateFarming() {
       const hasBonus = cityBonus && cityBonus.animals.includes(productName);
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
 
-      // Costs
-      const totalBabyCost = babiesPerCycle * babyPrice;
+      // Offspring return: base + focus bonus (same concept as seed return)
+      const offspringBase = (OFFSPRING_RETURN_RATE[animal.tier] || 0) / 100;
+      const offspringFocus = useFocus ? (OFFSPRING_FOCUS_BONUS[animal.tier] || 0) / 100 : 0;
+      const offspringRate = offspringBase + offspringFocus;
+      const offspringReturned = Math.floor(babiesPerCycle * offspringRate);
+
+      // Costs: only pay for babies not returned
+      const effectiveBabies = Math.max(0, babiesPerCycle - offspringReturned);
+      const totalBabyCost = effectiveBabies * babyPrice;
       const totalFeedCost = babiesPerCycle * feedPerAnimal * foodPrice;
       const totalCost = totalBabyCost + totalFeedCost;
 
@@ -1003,6 +1018,7 @@ async function calculateFarming() {
         city,
         plotCount,
         premium,
+        useFocus,
         hasBonus,
         babiesPerCycle,
         babyPrice,
@@ -1016,6 +1032,11 @@ async function calculateFarming() {
         avgProductYield,
         maxProductYield,
         productMin, productAvg, productMax,
+        offspringBase,
+        offspringFocus,
+        offspringRate,
+        offspringReturned,
+        effectiveBabies,
         totalBabyCost,
         totalFeedCost,
         totalCost,
@@ -1049,7 +1070,7 @@ async function calculateFarming() {
       const productPrice = priceMap[item.productId]?.sell_price_min || 0;
 
       const baseReturnRate = (SEED_RETURN_RATE[item.tier] || 0) / 100;
-      const focusBonus = useFocus ? (SEED_YIELD_BONUS[item.tier] || 0) / 100 : 0;
+      const focusBonus = useFocus ? (SEED_FOCUS_BONUS[item.tier] || 0) / 100 : 0;
       // No focus: base return only. With focus: base + focus bonus (additive)
       const totalReturnRate = baseReturnRate + focusBonus;
 
@@ -1093,7 +1114,7 @@ async function calculateFarming() {
         plotCount,
         premium,
         useFocus,
-        focusBonus: useFocus ? (SEED_YIELD_BONUS[item.tier] || 0) : 0,
+        focusBonus: useFocus ? (SEED_FOCUS_BONUS[item.tier] || 0) : 0,
         hasBonus,
         baseReturnRate,
         totalReturnRate,
@@ -1208,7 +1229,8 @@ function renderFarmingResults(data) {
             ` : ''}
           </div>
           <div class="farm-breakdown">
-            <div class="farm-breakdown-row"><span class="label">Baby cost (${data.babiesPerCycle} &times; ${formatSilver(data.babyPrice)} NPC)</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalBabyCost)}</span></div>
+            <div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Offspring return: ${data.offspringReturned}/${data.babiesPerCycle} (${Math.round(data.offspringBase * 100)}%${data.useFocus ? ` + ${Math.round(data.offspringFocus * 100)}% focus = ${Math.round(data.offspringRate * 100)}%` : ''})</span><span class="value" style="color:var(--blue);">saves ${formatSilver(data.offspringReturned * data.babyPrice)}</span></div>
+            <div class="farm-breakdown-row"><span class="label">Baby cost (${data.effectiveBabies} needed &times; ${formatSilver(data.babyPrice)} NPC)</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalBabyCost)}</span></div>
             <div class="farm-breakdown-row"><span class="label">Feed cost (${data.babiesPerCycle} &times; ${data.feedPerAnimal} ${animal.favFood} &times; ${formatSilver(data.foodPrice)})</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalFeedCost)}</span></div>
             <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;"><span class="label" style="font-weight:600;">Total Cost</span><span class="value" style="color:var(--red); font-weight:600;">-${formatSilver(data.totalCost)}</span></div>
             <div class="farm-breakdown-row" style="margin-top:12px;"><span class="label">Grown animal revenue (${data.babiesPerCycle} &times; ${formatSilver(data.grownPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalGrownRevenue)}</span></div>
