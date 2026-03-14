@@ -289,22 +289,23 @@ function calculateFlips(priceData, originCity, destCity) {
 // ENCHANT FLIP CALCULATION
 // ═══════════════════════════════════════════════════════════
 
-function calculateEnchantFlips(priceData, city, matCount) {
-  // Build price lookup: itemId -> { sell_price_min, buy_price_max }
-  const priceMap = {};
+function calculateEnchantFlips(priceData, buyCity, sellCity, matCount) {
+  // Build price lookups per city
+  const buyPriceMap = {};
+  const sellPriceMap = {};
   for (const entry of priceData) {
-    if (entry.city !== city) continue;
-    if (entry.quality !== 1) continue; // Only normal quality for enchant flips
-    priceMap[entry.item_id] = entry;
+    if (entry.quality !== 1) continue;
+    if (entry.city === buyCity) buyPriceMap[entry.item_id] = entry;
+    if (entry.city === sellCity) sellPriceMap[entry.item_id] = entry;
   }
 
-  // Get material prices
+  // Get material prices (buy in origin city)
   const matPrices = {};
   for (let tier = 4; tier <= 8; tier++) {
     matPrices[tier] = {
-      rune: priceMap[`T${tier}_RUNE`]?.sell_price_min || 0,
-      soul: priceMap[`T${tier}_SOUL`]?.sell_price_min || 0,
-      relic: priceMap[`T${tier}_RELIC`]?.sell_price_min || 0
+      rune: buyPriceMap[`T${tier}_RUNE`]?.sell_price_min || 0,
+      soul: buyPriceMap[`T${tier}_SOUL`]?.sell_price_min || 0,
+      relic: buyPriceMap[`T${tier}_RELIC`]?.sell_price_min || 0
     };
   }
 
@@ -321,7 +322,7 @@ function calculateEnchantFlips(priceData, city, matCount) {
   // Find all base items in the price data (items without @ that are equipment)
   const baseItems = new Set();
   for (const entry of priceData) {
-    if (entry.city !== city || entry.quality !== 1) continue;
+    if (entry.city !== buyCity || entry.quality !== 1) continue;
     const baseId = getBaseItemId(entry.item_id);
     const tier = getItemTier(baseId);
     if (tier >= 4) baseItems.add(baseId);
@@ -338,8 +339,8 @@ function calculateEnchantFlips(priceData, city, matCount) {
       const fromId = path.from === 0 ? baseId : `${baseId}@${path.from}`;
       const toId = `${baseId}@${path.to}`;
 
-      const fromData = priceMap[fromId];
-      const toData = priceMap[toId];
+      const fromData = buyPriceMap[fromId];
+      const toData = sellPriceMap[toId];
 
       if (!fromData || !toData) continue;
 
@@ -375,8 +376,8 @@ function calculateEnchantFlips(priceData, city, matCount) {
         itemId: baseId,
         quality: 1,
         itemName: formatItemName(baseId),
-        originCity: city,
-        destCity: city,
+        originCity: buyCity,
+        destCity: sellCity,
         buyPrice,
         sellPrice,
         netSellPrice,
@@ -512,14 +513,31 @@ async function startScan() {
       }
       enchantItemIds.push(...materialIds);
 
-      for (const enchantCity of enchantCities) {
-        setStatus(`Scanning enchant upgrades in ${enchantCity}...`);
+      if (multiRoute) {
+        for (const enchantCity of enchantCities) {
+          setStatus(`Scanning enchant upgrades in ${enchantCity}...`);
+          showProgress(true);
+          try {
+            const enchantPriceData = await fetchAllPrices(enchantItemIds, [enchantCity], (pct) => {
+              updateProgress(pct);
+            });
+            const enchantFlips = calculateEnchantFlips(enchantPriceData, enchantCity, enchantCity, matCount);
+            allFlips.push(...enchantFlips);
+          } catch (err) {
+            console.warn('Enchant flip scan error:', err);
+          }
+        }
+      } else {
+        const buyCity = document.getElementById('originCity').value;
+        const sellCity = document.getElementById('destCity').value;
+        const fetchCities = buyCity === sellCity ? [buyCity] : [buyCity, sellCity];
+        setStatus(`Scanning enchant upgrades ${buyCity} → ${sellCity}...`);
         showProgress(true);
         try {
-          const enchantPriceData = await fetchAllPrices(enchantItemIds, [enchantCity], (pct) => {
+          const enchantPriceData = await fetchAllPrices(enchantItemIds, fetchCities, (pct) => {
             updateProgress(pct);
           });
-          const enchantFlips = calculateEnchantFlips(enchantPriceData, enchantCity, matCount);
+          const enchantFlips = calculateEnchantFlips(enchantPriceData, buyCity, sellCity, matCount);
           allFlips.push(...enchantFlips);
         } catch (err) {
           console.warn('Enchant flip scan error:', err);
@@ -711,12 +729,14 @@ function buildTable(flips, showRoute) {
         return `<span class="mat-item"><img class="mat-icon" src="${getItemIconUrl(matId)}" alt="${matNames[m.type]}">${m.count}x T${flip.tier} ${matNames[m.type]} <span class="mat-price">${formatSilver(m.unitPrice)} ea</span></span>`;
       }).join('<span class="mat-sep">+</span>');
       typeCol = `
-        <div class="enchant-path">
-          <span class="enchant-level enchant-${flip.enchantFrom}">.${flip.enchantFrom}</span>
-          <span class="enchant-arrow">&#9654;</span>
-          <span class="enchant-level enchant-${flip.enchantTo}">.${flip.enchantTo}</span>
+        <div style="display:flex; align-items:center; gap:8px; white-space:nowrap;">
+          <span class="enchant-path">
+            <span class="enchant-level enchant-${flip.enchantFrom}">.${flip.enchantFrom}</span>
+            <span class="enchant-arrow">&#9654;</span>
+            <span class="enchant-level enchant-${flip.enchantTo}">.${flip.enchantTo}</span>
+          </span>
+          <span class="mat-cost">${matLabels}</span>
         </div>
-        <div class="mat-cost">${matLabels}</div>
       `;
     } else {
       typeCol = qualityNames[flip.quality] || flip.quality;
