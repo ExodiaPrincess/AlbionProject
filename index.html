@@ -1166,7 +1166,19 @@
             <input type="checkbox" id="farmPremium">
             <span class="toggle-slider"></span>
           </label>
-          <label for="farmPremium" style="margin-bottom:0; cursor:pointer;">Premium (2x yield)</label>
+          <label for="farmPremium" style="margin-bottom:0; cursor:pointer;">Premium (2x growth speed)</label>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="farmFocus">
+            <span class="toggle-slider"></span>
+          </label>
+          <label for="farmFocus" style="margin-bottom:0; cursor:pointer;">Use Focus (seed return)</label>
+        </div>
+        <div id="farmFocusReturnRow" style="display:none;">
+          <label for="farmFocusReturn">Seed return rate (%)</label>
+          <input type="number" id="farmFocusReturn" min="0" max="100" value="70" class="input">
+          <span class="panel-hint">Depends on specialization (0-100%)</span>
         </div>
 
         <label for="farmPlotCount">Number of plots used</label>
