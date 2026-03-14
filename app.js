@@ -965,10 +965,10 @@ async function calculateFarming() {
       const babiesPerCycle = plotCount * SEEDS_PER_PLOT;
       const feedPerAnimal = FEED_AMOUNT_FAVORITE;
       const meatPerAnimal = 18;
-      // Premium doubles produce: 7-11 → 14-22
-      const minProductYield = premium ? 14 : 7;
-      const maxProductYield = premium ? 22 : 11;
-      const avgProductYield = (minProductYield + maxProductYield) / 2;
+      // Product yield 7-11 per animal (NOT affected by premium)
+      const minProductYield = 7;
+      const maxProductYield = 11;
+      const avgProductYield = 9;
       const hasBonus = cityBonus && cityBonus.animals.includes(productName);
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
 
@@ -1001,8 +1001,8 @@ async function calculateFarming() {
       const productProfitAvg = productRevenueAvg + surplusRevenue - totalCost;
       const productProfitMax = productRevenueMax + surplusRevenue - totalCost;
 
-      // Production cycle: 22h
-      const cycleHours = 22;
+      // Growth cycle: 44h standard, 22h with premium
+      const cycleHours = premium ? 22 : 44;
       const cyclesPerDay = 24 / cycleHours;
 
       renderFarmingResults({
@@ -1209,7 +1209,7 @@ function renderFarmingResults(data) {
             <div class="farm-stat">
               <div class="farm-stat-label">${animal.productName}</div>
               <div class="farm-stat-value neutral">${formatSilver(data.productPrice)}</div>
-              <div class="farm-stat-sub">${data.minProductYield}–${data.maxProductYield} per animal${data.premium ? ' (premium 2×)' : ''}${data.hasBonus ? ' (+10%)' : ''}</div>
+              <div class="farm-stat-sub">${data.minProductYield}–${data.maxProductYield} per animal${data.hasBonus ? ' (+10%)' : ''}</div>
             </div>
             ` : ''}
           </div>
