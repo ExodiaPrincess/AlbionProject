@@ -978,15 +978,17 @@ async function calculateFarming() {
       const offspringRate = offspringBase + offspringFocus;
       const offspringReturned = Math.floor(babiesPerCycle * offspringRate);
 
-      // Costs: only pay for babies not returned
+      // Costs: only pay for babies not returned; surplus can be sold
       const effectiveBabies = Math.max(0, babiesPerCycle - offspringReturned);
+      const surplusBabies = Math.max(0, offspringReturned - babiesPerCycle);
+      const surplusRevenue = surplusBabies * babyPrice; // surplus sold at NPC value
       const totalBabyCost = effectiveBabies * babyPrice;
       const totalFeedCost = babiesPerCycle * feedPerAnimal * foodPrice;
       const totalCost = totalBabyCost + totalFeedCost;
 
       // === Strategy 1: Butcher for meat ===
       const totalMeatRevenue = babiesPerCycle * meatPerAnimal * meatPrice;
-      const butcherProfit = totalMeatRevenue - totalCost;
+      const butcherProfit = totalMeatRevenue + surplusRevenue - totalCost;
 
       // === Strategy 2: Keep for products (milk/eggs) ===
       const productMin = animal.productId ? Math.floor(babiesPerCycle * minProductYield * bonusMultiplier) : 0;
@@ -995,9 +997,9 @@ async function calculateFarming() {
       const productRevenueMin = productMin * productPrice;
       const productRevenueAvg = productAvg * productPrice;
       const productRevenueMax = productMax * productPrice;
-      const productProfitMin = productRevenueMin - totalCost;
-      const productProfitAvg = productRevenueAvg - totalCost;
-      const productProfitMax = productRevenueMax - totalCost;
+      const productProfitMin = productRevenueMin + surplusRevenue - totalCost;
+      const productProfitAvg = productRevenueAvg + surplusRevenue - totalCost;
+      const productProfitMax = productRevenueMax + surplusRevenue - totalCost;
 
       // Production cycle: 22h
       const cycleHours = 22;
@@ -1027,6 +1029,8 @@ async function calculateFarming() {
         offspringRate,
         offspringReturned,
         effectiveBabies,
+        surplusBabies,
+        surplusRevenue,
         totalBabyCost,
         totalFeedCost,
         totalCost,
@@ -1210,8 +1214,9 @@ function renderFarmingResults(data) {
             ` : ''}
           </div>
           <div class="farm-breakdown">
-            <div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Offspring return: ${data.offspringReturned}/${data.babiesPerCycle} (${Math.round(data.offspringBase * 100)}%${data.useFocus ? ` + ${Math.round(data.offspringFocus * 100)}% focus = ${Math.round(data.offspringRate * 100)}%` : ''})</span><span class="value" style="color:var(--blue);">saves ${formatSilver(data.offspringReturned * data.babyPrice)}</span></div>
+            <div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Offspring return: ${data.offspringReturned}/${data.babiesPerCycle} (${Math.round(data.offspringBase * 100)}%${data.useFocus ? ` + ${Math.round(data.offspringFocus * 100)}% focus = ${Math.round(data.offspringRate * 100)}%` : ''})</span><span class="value" style="color:var(--blue);">${data.surplusBabies > 0 ? data.surplusBabies + ' surplus' : 'saves ' + formatSilver(data.offspringReturned * data.babyPrice)}</span></div>
             <div class="farm-breakdown-row"><span class="label">Baby cost (${data.effectiveBabies} needed &times; ${formatSilver(data.babyPrice)} NPC)</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalBabyCost)}</span></div>
+            ${data.surplusBabies > 0 ? `<div class="farm-breakdown-row"><span class="label" style="color:var(--green);">Surplus offspring sold (${data.surplusBabies} &times; ${formatSilver(data.babyPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.surplusRevenue)}</span></div>` : ''}
             <div class="farm-breakdown-row"><span class="label">Feed cost (${data.babiesPerCycle} &times; ${data.feedPerAnimal} ${animal.favFood} &times; ${formatSilver(data.foodPrice)})</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalFeedCost)}</span></div>
             <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;"><span class="label" style="font-weight:600;">Total Cost</span><span class="value" style="color:var(--red); font-weight:600;">-${formatSilver(data.totalCost)}</span></div>
 
