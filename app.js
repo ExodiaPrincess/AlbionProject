@@ -788,8 +788,11 @@ const SEEDS_PER_PLOT = 9;
 const NPC_SEED_COST = { 1: 2312, 2: 3468, 3: 5780, 4: 8670, 5: 11560, 6: 17340, 7: 26010, 8: 34680 };
 const NPC_BABY_COST = { 3: 5780, 4: 8670, 5: 11560, 6: 17340, 7: 26010, 8: 34680 };
 
-// Focus watering seed return rates per tier (fixed %)
+// Base seed return rates per tier (% of seeds returned on harvest)
 const SEED_RETURN_RATE = { 1: 0, 2: 33.33, 3: 60, 4: 73.33, 5: 80, 6: 86.67, 7: 91.11, 8: 93.33 };
+
+// Focus watering: increases crop/herb yield by this % per tier
+const FOCUS_YIELD_BONUS = { 1: 200, 2: 133, 3: 80, 4: 53, 5: 40, 6: 27, 7: 18, 8: 13 };
 
 // Animal feeding: 9 crops if favorite food, 18 if not
 const FEED_AMOUNT_FAVORITE = 9;
@@ -922,6 +925,7 @@ async function calculateFarming() {
   const farmType = getFarmType();
   const productName = document.getElementById('farmProduct').value;
   const premium = document.getElementById('farmPremium').checked;
+  const useFocus = document.getElementById('farmFocus').checked;
   const plotCount = Math.min(parseInt(document.getElementById('farmPlotCount').value) || 1, FARM_PLOTS[islandLevel]);
 
   const btn = document.getElementById('farmCalcBtn');
@@ -1027,9 +1031,10 @@ async function calculateFarming() {
       const bonusList = isHerb ? cityBonus.herbs : cityBonus.crops;
       const hasBonus = cityBonus && bonusList.includes(productName);
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
-      const totalProductMin = Math.floor(seedsPerCycle * minYieldPerSeed * bonusMultiplier);
-      const totalProductAvg = Math.floor(seedsPerCycle * avgYieldPerSeed * bonusMultiplier);
-      const totalProductMax = Math.floor(seedsPerCycle * maxYieldPerSeed * bonusMultiplier);
+      const focusMultiplier = useFocus ? 1 + (FOCUS_YIELD_BONUS[item.tier] || 0) / 100 : 1.0;
+      const totalProductMin = Math.floor(seedsPerCycle * minYieldPerSeed * bonusMultiplier * focusMultiplier);
+      const totalProductAvg = Math.floor(seedsPerCycle * avgYieldPerSeed * bonusMultiplier * focusMultiplier);
+      const totalProductMax = Math.floor(seedsPerCycle * maxYieldPerSeed * bonusMultiplier * focusMultiplier);
 
       // Seeds returned on harvest (base mechanic, tier-dependent)
       const seedsReturned = Math.floor(seedsPerCycle * seedReturnRate);
@@ -1056,6 +1061,8 @@ async function calculateFarming() {
         city,
         plotCount,
         premium,
+        useFocus,
+        focusBonus: useFocus ? FOCUS_YIELD_BONUS[item.tier] : 0,
         hasBonus,
         seedReturnRate,
         seedsReturned,
@@ -1198,7 +1205,7 @@ function renderFarmingResults(data) {
             <div class="farm-stat">
               <div class="farm-stat-label">Yield / Seed</div>
               <div class="farm-stat-value neutral">${data.minYieldPerSeed}–${data.maxYieldPerSeed}</div>
-              <div class="farm-stat-sub">avg ${data.avgYieldPerSeed}${data.hasBonus ? ' (+10% bonus)' : ''}</div>
+              <div class="farm-stat-sub">avg ${data.avgYieldPerSeed}${data.hasBonus ? ' (+10% city)' : ''}${data.useFocus ? ` (+${data.focusBonus}% focus)` : ''}</div>
             </div>
             <div class="farm-stat">
               <div class="farm-stat-label">Seed Price (NPC)</div>
