@@ -1218,13 +1218,25 @@ function renderFarmingResults(data) {
             <h4 style="margin:16px 0 8px; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Butcher for ${animal.meatName}</h4>
             <div class="farm-breakdown-row"><span class="label">Meat revenue (${data.babiesPerCycle} &times; ${data.meatPerAnimal} &times; ${formatSilver(data.meatPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalMeatRevenue)}</span></div>
             <table class="farm-profit-table">
-              <thead><tr><th></th><th>Per Cycle (${data.cycleHours}h)</th><th>Daily</th><th>Monthly (30d)</th></tr></thead>
+              <thead><tr><th></th><th>Min</th><th>Average</th><th>Max</th></tr></thead>
               <tbody>
-                <tr class="farm-profit-highlight">
-                  <td class="farm-profit-label">Profit</td>
+                <tr>
+                  <td class="farm-profit-label">Per Cycle (${data.cycleHours}h)</td>
                   <td class="farm-profit-val">${fp(data.butcherProfit)}</td>
+                  <td class="farm-profit-val">${fp(data.butcherProfit)}</td>
+                  <td class="farm-profit-val">${fp(data.butcherProfit)}</td>
+                </tr>
+                <tr>
+                  <td class="farm-profit-label">Daily (~${data.cyclesPerDay.toFixed(1)} cycles)</td>
                   <td class="farm-profit-val">${fp(bDaily)}</td>
+                  <td class="farm-profit-val">${fp(bDaily)}</td>
+                  <td class="farm-profit-val">${fp(bDaily)}</td>
+                </tr>
+                <tr class="farm-profit-highlight">
+                  <td class="farm-profit-label">Monthly (30d)</td>
+                  <td class="farm-profit-val">${fp(bDaily * 30)}</td>
                   <td class="farm-profit-val">${fpBold(bDaily * 30)}</td>
+                  <td class="farm-profit-val">${fp(bDaily * 30)}</td>
                 </tr>
               </tbody>
             </table>
