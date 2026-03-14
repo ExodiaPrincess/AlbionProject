@@ -247,15 +247,9 @@ function calculateFlips(priceData, originCity, destCity) {
 
     if (!buyPrice || buyPrice <= 0) continue;
 
-    // Use instant sell (buy order) as primary, fall back to sell order pricing
-    let sellPrice = sellPriceInstant;
-    let sellType = 'instant';
-
-    if ((!sellPrice || sellPrice <= 0) && sellPriceSellOrder > 0) {
-      sellPrice = sellPriceSellOrder;
-      sellType = 'order';
-    }
-
+    // Use instant sell (buy order) only — sell order prices are unreliable
+    const sellPrice = sellPriceInstant;
+    const sellType = 'instant';
     if (!sellPrice || sellPrice <= 0) continue;
 
     // Calculate tax
@@ -363,13 +357,9 @@ function calculateEnchantFlips(priceData, city, matCount) {
         matDetails.push({ type: mat, count: matCount, unitPrice: matPrice, totalCost: cost });
       }
 
-      // Sell price: prefer buy orders (instant sell)
-      let sellPrice = toData.buy_price_max;
-      let sellType = 'instant';
-      if (!sellPrice || sellPrice <= 0) {
-        sellPrice = toData.sell_price_min;
-        sellType = 'order';
-      }
+      // Sell price: only use buy orders (instant sell) — sell order prices are unreliable
+      const sellPrice = toData.buy_price_max;
+      const sellType = 'instant';
       if (!sellPrice || sellPrice <= 0) continue;
 
       const taxRate = getTaxRate();
