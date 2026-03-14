@@ -1022,22 +1022,34 @@ async function calculateFarming() {
       const focusReturnRate = useFocus ? (FOCUS_SEED_RETURN[item.tier] || 0) / 100 : 0;
 
       const seedsPerCycle = plotCount * SEEDS_PER_PLOT;
-      const avgYieldPerSeed = 4.5; // NOT affected by premium
+      const minYieldPerSeed = 6;
+      const maxYieldPerSeed = 14;
+      const avgYieldPerSeed = (minYieldPerSeed + maxYieldPerSeed) / 2; // 10
       const bonusList = isHerb ? cityBonus.herbs : cityBonus.crops;
       const hasBonus = cityBonus && bonusList.includes(productName);
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
-      const totalProduct = Math.floor(seedsPerCycle * avgYieldPerSeed * bonusMultiplier);
+      const totalProductMin = Math.floor(seedsPerCycle * minYieldPerSeed * bonusMultiplier);
+      const totalProductAvg = Math.floor(seedsPerCycle * avgYieldPerSeed * bonusMultiplier);
+      const totalProductMax = Math.floor(seedsPerCycle * maxYieldPerSeed * bonusMultiplier);
 
       // Focus returns seeds, reducing effective cost
       const seedsReturned = useFocus ? Math.floor(seedsPerCycle * focusReturnRate) : 0;
       const effectiveSeedCost = (seedsPerCycle - seedsReturned) * seedPrice;
 
-      const totalRevenue = totalProduct * productPrice;
-      const profit = totalRevenue - effectiveSeedCost;
-      const growthHours = premium ? 11 : 22; // premium halves growth time
+      const revenueMin = totalProductMin * productPrice;
+      const revenueAvg = totalProductAvg * productPrice;
+      const revenueMax = totalProductMax * productPrice;
+      const profitMin = revenueMin - effectiveSeedCost;
+      const profitAvg = revenueAvg - effectiveSeedCost;
+      const profitMax = revenueMax - effectiveSeedCost;
+      const growthHours = premium ? 11 : 22;
       const cyclesPerDay = 24 / growthHours;
-      const dailyProfit = Math.floor(profit * cyclesPerDay);
-      const monthlyProfit = dailyProfit * 30;
+      const dailyProfitMin = Math.floor(profitMin * cyclesPerDay);
+      const dailyProfitAvg = Math.floor(profitAvg * cyclesPerDay);
+      const dailyProfitMax = Math.floor(profitMax * cyclesPerDay);
+      const monthlyProfitMin = dailyProfitMin * 30;
+      const monthlyProfitAvg = dailyProfitAvg * 30;
+      const monthlyProfitMax = dailyProfitMax * 30;
 
       renderFarmingResults({
         farmType,
@@ -1053,14 +1065,26 @@ async function calculateFarming() {
         seedPrice,
         productPrice,
         avgYieldPerSeed,
-        totalProduct,
+        minYieldPerSeed,
+        maxYieldPerSeed,
+        totalProductMin,
+        totalProductAvg,
+        totalProductMax,
         effectiveSeedCost,
-        totalRevenue,
-        profit,
+        revenueMin,
+        revenueAvg,
+        revenueMax,
+        profitMin,
+        profitAvg,
+        profitMax,
         growthHours,
         cyclesPerDay,
-        dailyProfit,
-        monthlyProfit
+        dailyProfitMin,
+        dailyProfitAvg,
+        dailyProfitMax,
+        monthlyProfitMin,
+        monthlyProfitAvg,
+        monthlyProfitMax
       });
     }
   } catch (err) {
@@ -1174,9 +1198,9 @@ function renderFarmingResults(data) {
               <div class="farm-stat-sub">${data.plotCount} plot${data.plotCount > 1 ? 's' : ''} &times; ${SEEDS_PER_PLOT} per plot</div>
             </div>
             <div class="farm-stat">
-              <div class="farm-stat-label">Avg Yield / Seed</div>
-              <div class="farm-stat-value neutral">${data.avgYieldPerSeed}</div>
-              <div class="farm-stat-sub">${data.hasBonus ? '+10% city bonus' : 'Base yield'}</div>
+              <div class="farm-stat-label">Yield / Seed</div>
+              <div class="farm-stat-value neutral">${data.minYieldPerSeed}–${data.maxYieldPerSeed}</div>
+              <div class="farm-stat-sub">avg ${data.avgYieldPerSeed}${data.hasBonus ? ' (+10% bonus)' : ''}</div>
             </div>
             <div class="farm-stat">
               <div class="farm-stat-label">Seed Price (NPC)</div>
@@ -1189,31 +1213,39 @@ function renderFarmingResults(data) {
               <div class="farm-stat-sub">per unit (sell order)</div>
             </div>
             <div class="farm-stat">
-              <div class="farm-stat-label">Total Harvest</div>
-              <div class="farm-stat-value neutral">${data.totalProduct}</div>
-              <div class="farm-stat-sub">${data.seedsPerCycle} seeds &times; ${data.avgYieldPerSeed} avg</div>
+              <div class="farm-stat-label">Harvest Range</div>
+              <div class="farm-stat-value neutral">${data.totalProductMin}–${data.totalProductMax}</div>
+              <div class="farm-stat-sub">avg ${data.totalProductAvg} (${data.seedsPerCycle} seeds)</div>
             </div>
             <div class="farm-stat full-width">
-              <div class="farm-stat-label">Profit per Cycle (${data.growthHours}h)</div>
-              <div class="farm-stat-value ${data.profit >= 0 ? 'positive' : 'negative'}">${data.profit >= 0 ? '+' : ''}${formatSilver(data.profit)}</div>
-              <div class="farm-stat-sub">~${data.cyclesPerDay.toFixed(2)} cycles/day${data.premium ? ' (premium)' : ''}</div>
+              <div class="farm-stat-label">Cycle Time</div>
+              <div class="farm-stat-value neutral">${data.growthHours}h</div>
+              <div class="farm-stat-sub">~${data.cyclesPerDay.toFixed(2)} cycles/day${data.premium ? ' (premium 2x speed)' : ''}</div>
             </div>
           </div>
           <div class="farm-breakdown">
             <div class="farm-breakdown-row"><span class="label">Seed cost (${data.seedsPerCycle} &times; ${formatSilver(data.seedPrice)} NPC${data.useFocus ? `, -${data.seedsReturned} returned` : ''})</span><span class="value" style="color:var(--red);">-${formatSilver(data.effectiveSeedCost)}</span></div>
             ${data.useFocus ? `<div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Focus: ${data.seedsReturned} seeds returned (${Math.round(data.focusReturnRate * 100)}%)</span><span class="value" style="color:var(--blue);">saves ${formatSilver(data.seedsReturned * data.seedPrice)}</span></div>` : ''}
-            <div class="farm-breakdown-row"><span class="label">${data.farmType === 'herbs' ? 'Herb' : 'Crop'} revenue (${data.totalProduct} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalRevenue)}</span></div>
+            <div class="farm-breakdown-row"><span class="label">${data.farmType === 'herbs' ? 'Herb' : 'Crop'} revenue (avg ${data.totalProductAvg} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.revenueAvg)}</span></div>
             <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
-              <span class="label" style="font-weight:700; color:var(--text-primary);">Net Profit per Cycle</span>
-              <span class="value" style="color:${data.profit >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:16px;">${data.profit >= 0 ? '+' : ''}${formatSilver(data.profit)}</span>
+              <span class="label" style="font-weight:700; color:var(--red);">Min Profit per Cycle</span>
+              <span class="value" style="color:${data.profitMin >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:15px;">${data.profitMin >= 0 ? '+' : ''}${formatSilver(data.profitMin)}</span>
             </div>
             <div class="farm-breakdown-row">
-              <span class="label" style="font-weight:700; color:var(--text-primary);">Daily Profit</span>
-              <span class="value" style="color:${data.dailyProfit >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:16px;">${data.dailyProfit >= 0 ? '+' : ''}${formatSilver(data.dailyProfit)}</span>
+              <span class="label" style="font-weight:700; color:var(--text-primary);">Avg Profit per Cycle</span>
+              <span class="value" style="color:${data.profitAvg >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:15px;">${data.profitAvg >= 0 ? '+' : ''}${formatSilver(data.profitAvg)}</span>
+            </div>
+            <div class="farm-breakdown-row">
+              <span class="label" style="font-weight:700; color:var(--green);">Max Profit per Cycle</span>
+              <span class="value" style="color:${data.profitMax >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:15px;">${data.profitMax >= 0 ? '+' : ''}${formatSilver(data.profitMax)}</span>
+            </div>
+            <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
+              <span class="label" style="font-weight:700; color:var(--text-primary);">Daily Profit (min / avg / max)</span>
+              <span class="value" style="font-size:14px;">${formatSilver(data.dailyProfitMin)} / <span style="color:${data.dailyProfitAvg >= 0 ? 'var(--green)' : 'var(--red)'}">${formatSilver(data.dailyProfitAvg)}</span> / ${formatSilver(data.dailyProfitMax)}</span>
             </div>
             <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
               <span class="label" style="font-weight:700; color:var(--accent); font-size:15px;">Monthly Profit (30d)</span>
-              <span class="value" style="color:${data.monthlyProfit >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:18px; font-weight:700;">${data.monthlyProfit >= 0 ? '+' : ''}${formatSilver(data.monthlyProfit)}</span>
+              <span class="value" style="font-size:14px;">${formatSilver(data.monthlyProfitMin)} / <span style="color:${data.monthlyProfitAvg >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:18px; font-weight:700;">${formatSilver(data.monthlyProfitAvg)}</span> / ${formatSilver(data.monthlyProfitMax)}</span>
             </div>
           </div>
         </div>
