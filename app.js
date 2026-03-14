@@ -789,7 +789,7 @@ const NPC_SEED_COST = { 1: 2312, 2: 3468, 3: 5780, 4: 8670, 5: 11560, 6: 17340, 
 const NPC_BABY_COST = { 3: 5780, 4: 8670, 5: 11560, 6: 17340, 7: 26010, 8: 34680 };
 
 // Focus watering seed return rates per tier (fixed %)
-const FOCUS_SEED_RETURN = { 1: 0, 2: 33.33, 3: 60, 4: 73.33, 5: 80, 6: 86.67, 7: 91.11, 8: 93.33 };
+const SEED_RETURN_RATE = { 1: 0, 2: 33.33, 3: 60, 4: 73.33, 5: 80, 6: 86.67, 7: 91.11, 8: 93.33 };
 
 // Animal feeding: 9 crops if favorite food, 18 if not
 const FEED_AMOUNT_FAVORITE = 9;
@@ -1018,8 +1018,7 @@ async function calculateFarming() {
       const seedPrice = NPC_SEED_COST[item.tier];
       const productPrice = priceMap[item.productId]?.sell_price_min || 0;
 
-      const useFocus = document.getElementById('farmFocus').checked;
-      const focusReturnRate = useFocus ? (FOCUS_SEED_RETURN[item.tier] || 0) / 100 : 0;
+      const seedReturnRate = (SEED_RETURN_RATE[item.tier] || 0) / 100;
 
       const seedsPerCycle = plotCount * SEEDS_PER_PLOT;
       const minYieldPerSeed = 6;
@@ -1032,8 +1031,8 @@ async function calculateFarming() {
       const totalProductAvg = Math.floor(seedsPerCycle * avgYieldPerSeed * bonusMultiplier);
       const totalProductMax = Math.floor(seedsPerCycle * maxYieldPerSeed * bonusMultiplier);
 
-      // Focus returns seeds, reducing effective cost
-      const seedsReturned = useFocus ? Math.floor(seedsPerCycle * focusReturnRate) : 0;
+      // Seeds returned on harvest (base mechanic, tier-dependent)
+      const seedsReturned = Math.floor(seedsPerCycle * seedReturnRate);
       const effectiveSeedCost = (seedsPerCycle - seedsReturned) * seedPrice;
 
       const revenueMin = totalProductMin * productPrice;
@@ -1058,8 +1057,7 @@ async function calculateFarming() {
         plotCount,
         premium,
         hasBonus,
-        useFocus,
-        focusReturnRate,
+        seedReturnRate,
         seedsReturned,
         seedsPerCycle,
         seedPrice,
@@ -1224,8 +1222,8 @@ function renderFarmingResults(data) {
             </div>
           </div>
           <div class="farm-breakdown">
-            <div class="farm-breakdown-row"><span class="label">Seed cost (${data.seedsPerCycle} &times; ${formatSilver(data.seedPrice)} NPC${data.useFocus ? `, -${data.seedsReturned} returned` : ''})</span><span class="value" style="color:var(--red);">-${formatSilver(data.effectiveSeedCost)}</span></div>
-            ${data.useFocus ? `<div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Focus: ${data.seedsReturned} seeds returned (${Math.round(data.focusReturnRate * 100)}%)</span><span class="value" style="color:var(--blue);">saves ${formatSilver(data.seedsReturned * data.seedPrice)}</span></div>` : ''}
+            <div class="farm-breakdown-row"><span class="label">Seed cost (${data.seedsPerCycle} &times; ${formatSilver(data.seedPrice)} NPC, -${data.seedsReturned} returned)</span><span class="value" style="color:var(--red);">-${formatSilver(data.effectiveSeedCost)}</span></div>
+            <div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Seed return: ${data.seedsReturned}/${data.seedsPerCycle} (${Math.round(data.seedReturnRate * 100)}%)</span><span class="value" style="color:var(--blue);">saves ${formatSilver(data.seedsReturned * data.seedPrice)}</span></div>
             <div class="farm-breakdown-row"><span class="label">${data.farmType === 'herbs' ? 'Herb' : 'Crop'} revenue (avg ${data.totalProductAvg} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.revenueAvg)}</span></div>
             <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
               <span class="label" style="font-weight:700; color:var(--red);">Min Profit per Cycle</span>
