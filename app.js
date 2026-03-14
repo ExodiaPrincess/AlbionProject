@@ -951,8 +951,9 @@ async function calculateFarming() {
       }
 
       const babyPrice = NPC_BABY_COST[animal.tier];
-      const grownPrice = priceMap[animal.grownId]?.sell_price_min || 0;
       const meatPrice = priceMap[animal.meatId]?.sell_price_min || 0;
+      // If grown animal price unavailable, estimate from meat price × 20
+      const grownPrice = priceMap[animal.grownId]?.sell_price_min || (meatPrice * 20);
       const productPrice = animal.productId ? (priceMap[animal.productId]?.sell_price_min || 0) : 0;
       const foodPrice = priceMap[animal.favFoodId]?.sell_price_min || 0;
 
