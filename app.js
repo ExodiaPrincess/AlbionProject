@@ -43,9 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize farming sidebar
   populateFarmProducts();
   document.getElementById('farmCity').addEventListener('change', updateFarmBonusInfo);
-  document.getElementById('farmFocus').addEventListener('change', (e) => {
-    document.getElementById('farmFocusReturnRow').style.display = e.target.checked ? '' : 'none';
-  });
 });
 
 function onDestCityChange() {
@@ -791,6 +788,9 @@ const SEEDS_PER_PLOT = 9;
 const NPC_SEED_COST = { 1: 2312, 2: 3468, 3: 5780, 4: 8670, 5: 11560, 6: 17340, 7: 26010, 8: 34680 };
 const NPC_BABY_COST = { 3: 5780, 4: 8670, 5: 11560, 6: 17340, 7: 26010, 8: 34680 };
 
+// Focus watering seed return rates per tier (fixed %)
+const FOCUS_SEED_RETURN = { 1: 0, 2: 33.33, 3: 60, 4: 73.33, 5: 80, 6: 86.67, 7: 91.11, 8: 93.33 };
+
 // Animal feeding: 9 crops if favorite food, 18 if not
 const FEED_AMOUNT_FAVORITE = 9;
 const FEED_AMOUNT_NORMAL = 18;
@@ -1019,7 +1019,7 @@ async function calculateFarming() {
       const productPrice = priceMap[item.productId]?.sell_price_min || 0;
 
       const useFocus = document.getElementById('farmFocus').checked;
-      const focusReturnRate = useFocus ? (parseInt(document.getElementById('farmFocusReturn').value) || 0) / 100 : 0;
+      const focusReturnRate = useFocus ? (FOCUS_SEED_RETURN[item.tier] || 0) / 100 : 0;
 
       const seedsPerCycle = plotCount * SEEDS_PER_PLOT;
       const avgYieldPerSeed = 4.5; // NOT affected by premium
