@@ -816,12 +816,11 @@ const FARM_CROPS = [
 ];
 
 const FARM_ANIMALS = [
-  { tier: 3, name: 'Chicken', babyId: 'T3_FARM_CHICKEN_BABY', grownId: 'T3_FARM_CHICKEN_GROWN', meatId: 'T3_MEAT', meatName: 'Raw Chicken', productId: 'T3_EGG',  productName: 'Hen Egg',    favFood: 'Wheat',   favFoodId: 'T3_WHEAT' },
-  { tier: 4, name: 'Goat',    babyId: 'T4_FARM_GOAT_BABY',    grownId: 'T4_FARM_GOAT_GROWN',    meatId: 'T4_MEAT', meatName: 'Raw Goat',    productId: 'T4_MILK', productName: 'Goat Milk',  favFood: 'Turnip',  favFoodId: 'T4_TURNIP' },
-  { tier: 5, name: 'Goose',   babyId: 'T5_FARM_GOOSE_BABY',   grownId: 'T5_FARM_GOOSE_GROWN',   meatId: 'T5_MEAT', meatName: 'Raw Goose',   productId: 'T5_EGG',  productName: 'Goose Egg',  favFood: 'Cabbage', favFoodId: 'T5_CABBAGE' },
-  { tier: 6, name: 'Sheep',   babyId: 'T6_FARM_SHEEP_BABY',   grownId: 'T6_FARM_SHEEP_GROWN',   meatId: 'T6_MEAT', meatName: 'Raw Mutton',  productId: 'T6_MILK', productName: 'Sheep Milk', favFood: 'Potato',  favFoodId: 'T6_POTATO' },
-  { tier: 7, name: 'Pig',     babyId: 'T7_FARM_PIG_BABY',     grownId: 'T7_FARM_PIG_GROWN',     meatId: 'T7_MEAT', meatName: 'Raw Pork',    productId: null,      productName: null,         favFood: 'Corn',    favFoodId: 'T7_CORN' },
-  { tier: 8, name: 'Cow',     babyId: 'T8_FARM_COW_BABY',     grownId: 'T8_FARM_COW_GROWN',     meatId: 'T8_MEAT', meatName: 'Raw Beef',    productId: 'T8_MILK', productName: 'Cow Milk',   favFood: 'Pumpkin', favFoodId: 'T8_PUMPKIN' }
+  { tier: 3, name: 'Chicken', babyId: 'T3_FARM_CHICKEN_BABY', productId: 'T3_EGG',  productName: 'Hen Eggs',    favFood: 'Wheat',   favFoodId: 'T3_WHEAT' },
+  { tier: 4, name: 'Goat',    babyId: 'T4_FARM_GOAT_BABY',    productId: 'T4_MILK', productName: "Goat's Milk", favFood: 'Turnip',  favFoodId: 'T4_TURNIP' },
+  { tier: 5, name: 'Goose',   babyId: 'T5_FARM_GOOSE_BABY',   productId: 'T5_EGG',  productName: 'Goose Eggs',  favFood: 'Cabbage', favFoodId: 'T5_CABBAGE' },
+  { tier: 6, name: 'Sheep',   babyId: 'T6_FARM_SHEEP_BABY',   productId: 'T6_MILK', productName: "Sheep's Milk", favFood: 'Potato',  favFoodId: 'T6_POTATO' },
+  { tier: 8, name: 'Cow',     babyId: 'T8_FARM_COW_BABY',     productId: 'T8_MILK', productName: "Cow's Milk",   favFood: 'Pumpkin', favFoodId: 'T8_PUMPKIN' }
 ];
 
 const FARM_HERBS = [
@@ -879,7 +878,7 @@ function onFarmProductChange() {
       const products = animal.productName ? `Produces: ${animal.productName} (7-11 per animal)` : 'Butcher only (no secondary products)';
       const offBase = OFFSPRING_RETURN_RATE[animal.tier] || 0;
       const offFocus = OFFSPRING_FOCUS_BONUS[animal.tier] || 0;
-      info.innerHTML = `${SEEDS_PER_PLOT} babies per pasture &middot; 44h growth (22h premium)<br>${products}<br>Butchers into: ${animal.meatName} (18 per animal)<br>Favorite food: ${animal.favFood} (${FEED_AMOUNT_FAVORITE}/animal, or ${FEED_AMOUNT_NORMAL} other crop)<br>Offspring return: ${offBase}% base (+${offFocus}% with focus)`;
+      info.innerHTML = `${SEEDS_PER_PLOT} animals per pasture &middot; 22h production cycle<br>${products} (doubled by Premium)<br>Favorite food: ${animal.favFood} (${FEED_AMOUNT_FAVORITE}/animal)<br>Offspring return: ${offBase}% base (+${offFocus}% with focus)`;
     }
   } else if (farmType === 'herbs') {
     const herb = FARM_HERBS.find(h => h.name === productName);
@@ -945,10 +944,8 @@ async function calculateFarming() {
       const animal = FARM_ANIMALS.find(a => a.name === productName);
       if (!animal) throw new Error('Animal not found');
 
-      // Fetch grown animal, meat, product, and favorite food prices
-      const itemsToFetch = [animal.grownId, animal.meatId, animal.favFoodId];
-      if (animal.productId) itemsToFetch.push(animal.productId);
-
+      // Fetch product price and favorite food price
+      const itemsToFetch = [animal.productId, animal.favFoodId];
       const priceData = await fetchPricesBatch(itemsToFetch, [city]);
 
       const priceMap = {};
@@ -959,22 +956,19 @@ async function calculateFarming() {
       }
 
       const babyPrice = NPC_BABY_COST[animal.tier];
-      const meatPrice = priceMap[animal.meatId]?.sell_price_min || 0;
-      // If grown animal price unavailable, estimate from meat price × 20
-      const grownPrice = priceMap[animal.grownId]?.sell_price_min || (meatPrice * 20);
-      const productPrice = animal.productId ? (priceMap[animal.productId]?.sell_price_min || 0) : 0;
+      const productPrice = priceMap[animal.productId]?.sell_price_min || 0;
       const foodPrice = priceMap[animal.favFoodId]?.sell_price_min || 0;
 
       const babiesPerCycle = plotCount * SEEDS_PER_PLOT;
       const feedPerAnimal = FEED_AMOUNT_FAVORITE;
-      const meatPerAnimal = 18; // butchering yields 18 raw meat per animal
-      const minProductYield = 7;
-      const maxProductYield = 11;
-      const avgProductYield = 9;
+      // Premium doubles produce: 7-11 → 14-22
+      const minProductYield = premium ? 14 : 7;
+      const maxProductYield = premium ? 22 : 11;
+      const avgProductYield = (minProductYield + maxProductYield) / 2;
       const hasBonus = cityBonus && cityBonus.animals.includes(productName);
       const bonusMultiplier = hasBonus ? 1.10 : 1.0;
 
-      // Offspring return: base + focus bonus (same concept as seed return)
+      // Offspring return: base + focus bonus
       const offspringBase = (OFFSPRING_RETURN_RATE[animal.tier] || 0) / 100;
       const offspringFocus = useFocus ? (OFFSPRING_FOCUS_BONUS[animal.tier] || 0) / 100 : 0;
       const offspringRate = offspringBase + offspringFocus;
@@ -986,31 +980,22 @@ async function calculateFarming() {
       const totalFeedCost = babiesPerCycle * feedPerAnimal * foodPrice;
       const totalCost = totalBabyCost + totalFeedCost;
 
-      // Revenue: grown animal (sell as-is)
-      const totalGrownRevenue = babiesPerCycle * grownPrice;
-
-      // Revenue: butchered meat (18 meat per animal)
-      const totalMeatRevenue = babiesPerCycle * meatPerAnimal * meatPrice;
-
-      // Revenue: product (milk/eggs) — min/avg/max
-      const productMin = animal.productId ? Math.floor(babiesPerCycle * minProductYield * bonusMultiplier) : 0;
-      const productAvg = animal.productId ? Math.floor(babiesPerCycle * avgProductYield * bonusMultiplier) : 0;
-      const productMax = animal.productId ? Math.floor(babiesPerCycle * maxProductYield * bonusMultiplier) : 0;
+      // Revenue: product only (milk/eggs) — min/avg/max
+      const productMin = Math.floor(babiesPerCycle * minProductYield * bonusMultiplier);
+      const productAvg = Math.floor(babiesPerCycle * avgProductYield * bonusMultiplier);
+      const productMax = Math.floor(babiesPerCycle * maxProductYield * bonusMultiplier);
       const productRevenueMin = productMin * productPrice;
       const productRevenueAvg = productAvg * productPrice;
       const productRevenueMax = productMax * productPrice;
 
-      // Profit scenarios: sell grown vs butcher (pick higher), plus product
-      const grownProfitMin = totalGrownRevenue + productRevenueMin - totalCost;
-      const grownProfitAvg = totalGrownRevenue + productRevenueAvg - totalCost;
-      const grownProfitMax = totalGrownRevenue + productRevenueMax - totalCost;
-      const butcherProfitMin = totalMeatRevenue + productRevenueMin - totalCost;
-      const butcherProfitAvg = totalMeatRevenue + productRevenueAvg - totalCost;
-      const butcherProfitMax = totalMeatRevenue + productRevenueMax - totalCost;
+      // Profit: product revenue - costs
+      const profitMin = productRevenueMin - totalCost;
+      const profitAvg = productRevenueAvg - totalCost;
+      const profitMax = productRevenueMax - totalCost;
 
-      // Growth: 44h standard, 22h premium
-      const growthHours = premium ? 22 : 44;
-      const cyclesPerDay = 24 / growthHours;
+      // Production cycle: 22h
+      const cycleHours = 22;
+      const cyclesPerDay = 24 / cycleHours;
 
       renderFarmingResults({
         farmType: 'animals',
@@ -1022,9 +1007,6 @@ async function calculateFarming() {
         hasBonus,
         babiesPerCycle,
         babyPrice,
-        grownPrice,
-        meatPrice,
-        meatPerAnimal,
         productPrice,
         foodPrice,
         feedPerAnimal,
@@ -1040,12 +1022,9 @@ async function calculateFarming() {
         totalBabyCost,
         totalFeedCost,
         totalCost,
-        totalGrownRevenue,
-        totalMeatRevenue,
         productRevenueMin, productRevenueAvg, productRevenueMax,
-        grownProfitMin, grownProfitAvg, grownProfitMax,
-        butcherProfitMin, butcherProfitAvg, butcherProfitMax,
-        growthHours,
+        profitMin, profitAvg, profitMax,
+        cycleHours,
         cyclesPerDay,
         bonusMultiplier
       });
@@ -1173,13 +1152,9 @@ function renderFarmingResults(data) {
     const fp = (v) => v >= 0 ? `<span style="color:var(--green)">+${formatSilver(v)}</span>` : `<span style="color:var(--red)">${formatSilver(v)}</span>`;
     const fpBold = (v) => v >= 0 ? `<span style="color:var(--green);font-weight:700">${formatSilver(v)}</span>` : `<span style="color:var(--red);font-weight:700">${formatSilver(v)}</span>`;
 
-    // Daily & monthly for both strategies
-    const gDailyMin = Math.floor(data.grownProfitMin * data.cyclesPerDay);
-    const gDailyAvg = Math.floor(data.grownProfitAvg * data.cyclesPerDay);
-    const gDailyMax = Math.floor(data.grownProfitMax * data.cyclesPerDay);
-    const bDailyMin = Math.floor(data.butcherProfitMin * data.cyclesPerDay);
-    const bDailyAvg = Math.floor(data.butcherProfitAvg * data.cyclesPerDay);
-    const bDailyMax = Math.floor(data.butcherProfitMax * data.cyclesPerDay);
+    const dailyMin = Math.floor(data.profitMin * data.cyclesPerDay);
+    const dailyAvg = Math.floor(data.profitAvg * data.cyclesPerDay);
+    const dailyMax = Math.floor(data.profitMax * data.cyclesPerDay);
 
     container.innerHTML = `
       <div class="farm-results">
@@ -1191,14 +1166,14 @@ function renderFarmingResults(data) {
           </div>
           <div class="farm-stat-grid">
             <div class="farm-stat">
-              <div class="farm-stat-label">Babies Needed</div>
+              <div class="farm-stat-label">Animals</div>
               <div class="farm-stat-value neutral">${data.babiesPerCycle}</div>
               <div class="farm-stat-sub">${data.plotCount} pasture${data.plotCount > 1 ? 's' : ''} &times; ${SEEDS_PER_PLOT} each</div>
             </div>
             <div class="farm-stat">
-              <div class="farm-stat-label">Cycle Time</div>
-              <div class="farm-stat-value neutral">${data.growthHours}h</div>
-              <div class="farm-stat-sub">${data.premium ? 'Premium (22h)' : 'Standard (44h)'} &middot; ~${data.cyclesPerDay.toFixed(1)} cycles/day</div>
+              <div class="farm-stat-label">Production Cycle</div>
+              <div class="farm-stat-value neutral">${data.cycleHours}h</div>
+              <div class="farm-stat-sub">~${data.cyclesPerDay.toFixed(1)} cycles/day</div>
             </div>
             <div class="farm-stat">
               <div class="farm-stat-label">Baby Price (NPC)</div>
@@ -1211,78 +1186,39 @@ function renderFarmingResults(data) {
               <div class="farm-stat-sub">${data.feedPerAnimal}/animal (fav food)</div>
             </div>
             <div class="farm-stat">
-              <div class="farm-stat-label">Grown ${animal.name}</div>
-              <div class="farm-stat-value neutral">${formatSilver(data.grownPrice)}</div>
-              <div class="farm-stat-sub">sell grown animal</div>
-            </div>
-            <div class="farm-stat">
-              <div class="farm-stat-label">${animal.meatName}</div>
-              <div class="farm-stat-value neutral">${formatSilver(data.meatPrice)}</div>
-              <div class="farm-stat-sub">${data.meatPerAnimal} per butchered animal</div>
-            </div>
-            ${animal.productId ? `
-            <div class="farm-stat">
-              <div class="farm-stat-label">${animal.productName}</div>
+              <div class="farm-stat-label">${animal.productName} Price</div>
               <div class="farm-stat-value neutral">${formatSilver(data.productPrice)}</div>
-              <div class="farm-stat-sub">${data.minProductYield}–${data.maxProductYield} per animal${data.hasBonus ? ' (+10%)' : ''}</div>
+              <div class="farm-stat-sub">${data.minProductYield}–${data.maxProductYield} per animal${data.premium ? ' (premium 2×)' : ''}${data.hasBonus ? ' (+10%)' : ''}</div>
             </div>
-            ` : ''}
           </div>
           <div class="farm-breakdown">
             <div class="farm-breakdown-row"><span class="label" style="color:var(--blue);">Offspring return: ${data.offspringReturned}/${data.babiesPerCycle} (${Math.round(data.offspringBase * 100)}%${data.useFocus ? ` + ${Math.round(data.offspringFocus * 100)}% focus = ${Math.round(data.offspringRate * 100)}%` : ''})</span><span class="value" style="color:var(--blue);">saves ${formatSilver(data.offspringReturned * data.babyPrice)}</span></div>
             <div class="farm-breakdown-row"><span class="label">Baby cost (${data.effectiveBabies} needed &times; ${formatSilver(data.babyPrice)} NPC)</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalBabyCost)}</span></div>
             <div class="farm-breakdown-row"><span class="label">Feed cost (${data.babiesPerCycle} &times; ${data.feedPerAnimal} ${animal.favFood} &times; ${formatSilver(data.foodPrice)})</span><span class="value" style="color:var(--red);">-${formatSilver(data.totalFeedCost)}</span></div>
             <div class="farm-breakdown-row" style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;"><span class="label" style="font-weight:600;">Total Cost</span><span class="value" style="color:var(--red); font-weight:600;">-${formatSilver(data.totalCost)}</span></div>
-            <div class="farm-breakdown-row" style="margin-top:12px;"><span class="label">Grown animal revenue (${data.babiesPerCycle} &times; ${formatSilver(data.grownPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalGrownRevenue)}</span></div>
-            <div class="farm-breakdown-row"><span class="label">Butchered meat revenue (${data.babiesPerCycle} &times; ${data.meatPerAnimal} &times; ${formatSilver(data.meatPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.totalMeatRevenue)}</span></div>
-            ${animal.productId ? `<div class="farm-breakdown-row"><span class="label">${animal.productName} revenue (avg ${data.productAvg} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.productRevenueAvg)}</span></div>` : ''}
+            <div class="farm-breakdown-row" style="margin-top:12px;"><span class="label">${animal.productName} revenue (avg ${data.productAvg} &times; ${formatSilver(data.productPrice)})</span><span class="value" style="color:var(--green);">+${formatSilver(data.productRevenueAvg)}</span></div>
 
-            <h4 style="margin:16px 0 8px; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Sell Grown Animal${animal.productId ? ' + ' + animal.productName : ''}</h4>
+            <h4 style="margin:16px 0 8px; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">${animal.productName} Profit</h4>
             <table class="farm-profit-table">
               <thead><tr><th></th><th>Min</th><th>Average</th><th>Max</th></tr></thead>
               <tbody>
                 <tr>
-                  <td class="farm-profit-label">Per Cycle (${data.growthHours}h)</td>
-                  <td class="farm-profit-val">${fp(data.grownProfitMin)}</td>
-                  <td class="farm-profit-val">${fp(data.grownProfitAvg)}</td>
-                  <td class="farm-profit-val">${fp(data.grownProfitMax)}</td>
+                  <td class="farm-profit-label">Per Cycle (${data.cycleHours}h)</td>
+                  <td class="farm-profit-val">${fp(data.profitMin)}</td>
+                  <td class="farm-profit-val">${fp(data.profitAvg)}</td>
+                  <td class="farm-profit-val">${fp(data.profitMax)}</td>
                 </tr>
                 <tr>
                   <td class="farm-profit-label">Daily (~${data.cyclesPerDay.toFixed(1)} cycles)</td>
-                  <td class="farm-profit-val">${fp(gDailyMin)}</td>
-                  <td class="farm-profit-val">${fp(gDailyAvg)}</td>
-                  <td class="farm-profit-val">${fp(gDailyMax)}</td>
+                  <td class="farm-profit-val">${fp(dailyMin)}</td>
+                  <td class="farm-profit-val">${fp(dailyAvg)}</td>
+                  <td class="farm-profit-val">${fp(dailyMax)}</td>
                 </tr>
                 <tr class="farm-profit-highlight">
                   <td class="farm-profit-label">Monthly (30d)</td>
-                  <td class="farm-profit-val">${fp(gDailyMin * 30)}</td>
-                  <td class="farm-profit-val">${fpBold(gDailyAvg * 30)}</td>
-                  <td class="farm-profit-val">${fp(gDailyMax * 30)}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <h4 style="margin:16px 0 8px; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Butcher for ${animal.meatName}${animal.productId ? ' + ' + animal.productName : ''}</h4>
-            <table class="farm-profit-table">
-              <thead><tr><th></th><th>Min</th><th>Average</th><th>Max</th></tr></thead>
-              <tbody>
-                <tr>
-                  <td class="farm-profit-label">Per Cycle (${data.growthHours}h)</td>
-                  <td class="farm-profit-val">${fp(data.butcherProfitMin)}</td>
-                  <td class="farm-profit-val">${fp(data.butcherProfitAvg)}</td>
-                  <td class="farm-profit-val">${fp(data.butcherProfitMax)}</td>
-                </tr>
-                <tr>
-                  <td class="farm-profit-label">Daily (~${data.cyclesPerDay.toFixed(1)} cycles)</td>
-                  <td class="farm-profit-val">${fp(bDailyMin)}</td>
-                  <td class="farm-profit-val">${fp(bDailyAvg)}</td>
-                  <td class="farm-profit-val">${fp(bDailyMax)}</td>
-                </tr>
-                <tr class="farm-profit-highlight">
-                  <td class="farm-profit-label">Monthly (30d)</td>
-                  <td class="farm-profit-val">${fp(bDailyMin * 30)}</td>
-                  <td class="farm-profit-val">${fpBold(bDailyAvg * 30)}</td>
-                  <td class="farm-profit-val">${fp(bDailyMax * 30)}</td>
+                  <td class="farm-profit-val">${fp(dailyMin * 30)}</td>
+                  <td class="farm-profit-val">${fpBold(dailyAvg * 30)}</td>
+                  <td class="farm-profit-val">${fp(dailyMax * 30)}</td>
                 </tr>
               </tbody>
             </table>
