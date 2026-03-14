@@ -686,7 +686,6 @@ function buildTable(flips, showRoute) {
           ${showRoute ? '<th>Buy In</th><th>Sell In</th>' : ''}
           <th>Buy Price</th>
           <th>Sell Price</th>
-          <th>Tax</th>
           <th>Profit</th>
           <th>Margin</th>
           <th>Data Age</th>
@@ -739,8 +738,7 @@ function buildTable(flips, showRoute) {
           <td><span class="city-tag city-${flip.destCity.replace(/\s/g, '')}">${flip.destCity}</span></td>
         ` : ''}
         <td class="price">${formatSilver(flip.buyPrice)}${flip.isEnchantFlip ? `<br><span class="mat-cost">+${formatSilver(flip.materialCost)} mats</span>` : ''}</td>
-        <td class="price">${formatSilver(flip.sellPrice)} <span style="font-size:10px; color:var(--text-muted);">${flip.sellType === 'instant' ? 'buy' : 'sell'}</span></td>
-        <td class="price" style="color:var(--red); font-size:12px;">-${formatSilver(flip.taxAmount)}</td>
+        <td class="price">${formatSilver(flip.sellPrice)}</td>
         <td class="price profit-positive">+${formatSilver(flip.profit)}</td>
         <td><span class="margin-badge ${marginClass}">${flip.margin.toFixed(1)}%</span></td>
         <td class="data-age"><span class="dot ${oldestAge}"></span> ${buyAge}</td>
